@@ -434,3 +434,19 @@ button.chip-vence { cursor: pointer; }
   .campana-movil { right: calc(58px + env(safe-area-inset-right, 0px)); }
   .cabecera-proyecto { padding-left: 16px; padding-right: 108px; }
 }
+
+/* Listas desplegables en la tabla */
+.lista-etiqueta { position: relative; display: flex; align-items: center; height: 40px; width: 100%; background: var(--vacio-bg); color: var(--tenue); }
+.lista-etiqueta select { appearance: none; -webkit-appearance: none; width: 100%; height: 100%; border: 0; border-radius: 0; background: transparent; color: inherit; font-weight: 600; text-align: center; text-align-last: center; padding: 0 26px 0 10px; cursor: pointer; }
+.lista-etiqueta::after { content: ""; position: absolute; right: 10px; top: 50%; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-70%) rotate(45deg); pointer-events: none; opacity: .85; }
+.lista-etiqueta select option { background: var(--superficie); color: var(--texto); font-weight: 500; }
+.lista-etiqueta:focus-within { outline: 2px solid var(--primario); outline-offset: -2px; }
+.campo-celda { border: 1px solid var(--borde); border-radius: 6px; background: var(--superficie); padding: 5px 8px; font-size: 13px; cursor: pointer; }
+.campo-celda:hover { border-color: var(--primario); }
+.entrada-fecha.campo-celda { width: 140px; }
+.lista-estimacion { width: 80px; }
+.numero-fila { min-width: 26px; color: var(--tenue); font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.fila-sub .numero-fila { min-width: 34px; font-weight: 500; }
+.form-agregar { display: flex; align-items: center; gap: 6px; }
+.boton-mas { flex: none; width: 28px; height: 28px; border-radius: 50%; border: 0; background: var(--primario); color: #ffffff; font-size: 18px; line-height: 1; display: grid; place-items: center; }
+.boton-mas:hover { background: var(--primario-osc); }

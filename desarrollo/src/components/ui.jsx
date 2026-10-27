@@ -163,3 +163,18 @@ export function Logo() {
   );
 }
 
+
+// Lista desplegable con el color de la opción elegida (estado y prioridad)
+export function ListaEtiqueta({ etiquetas, valor, onCambiar, editable, etiqueta, vacio = "Sin asignar" }) {
+  const actual = etiquetas.find((l) => l.id === valor);
+  const estilo = actual ? { background: actual.color, color: textoSobre(actual.color) } : undefined;
+  if (!editable) return <span className={`pastilla ${actual ? "" : "pastilla-vacia"}`} style={estilo}>{actual?.name ?? "—"}</span>;
+  return (
+    <span className={`lista-etiqueta ${actual ? "" : "sin-valor"}`} style={estilo}>
+      <select aria-label={etiqueta} value={valor ?? ""} onChange={(e) => onCambiar(e.target.value || null)}>
+        <option value="">{vacio}</option>
+        {etiquetas.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+      </select>
+    </span>
+  );
+}

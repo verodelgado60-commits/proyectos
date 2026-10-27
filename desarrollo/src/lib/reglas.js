@@ -7,9 +7,12 @@ export const claves = { project_members: ["project_id", "user_id"] };
 const ahora = () => new Date().toISOString();
 const error = (m) => { throw new Error(m); };
 
+// Estados con la paleta Liberty: Gris tres, Amarillo, Verde. El manual no trae rojo: se usa uno afín a la paleta.
+export const GRIS = "#b0b0b4", AMARILLO = "#ffbe00", ROJO = "#e03c31", VERDE = "#1dcd9f";
+export const ESQUEMA = 2;
 const ETIQUETAS = [
-  ["status", "Pendiente", "#b0b0b4", false], ["status", "En curso", "#ff7c00", false],
-  ["status", "Atascado", "#893124", false], ["status", "Listo", "#1dcd9f", true],
+  ["status", "Pendiente", GRIS, false], ["status", "En curso", AMARILLO, false],
+  ["status", "Stopper", ROJO, false], ["status", "Listo", VERDE, true],
   ["priority", "Baja", "#4dc1ff", false], ["priority", "Media", "#0780ee", false],
   ["priority", "Alta", "#003ff9", false], ["priority", "Crítica", "#30343c", false],
 ];
@@ -33,12 +36,12 @@ export const reglas = {
   insertar(tabla, fila, ctx) {
     const yo = ctx.sesion.user.id;
     if (tabla === "projects") {
-      const p = { description: "", color: "#0780ee", position: 0, ...fila, owner_id: yo, created_at: ahora(), updated_at: ahora() };
+      const p = { description: "", color: "#0780ee", position: 0, esquema: ESQUEMA, ...fila, owner_id: yo, created_at: ahora(), updated_at: ahora() };
       if (!p.name?.trim()) error("El proyecto necesita un nombre.");
       ctx.extra.push({ t: "insert", tabla: "project_members", filas: [{ project_id: p.id, user_id: yo, role: "owner", added_at: ahora() }] });
       const pos = { status: 0, priority: 0 };
       ctx.extra.push({ t: "insert", tabla: "labels", filas: ETIQUETAS.map(([kind, name, color, is_done]) => ({ id: ctx.nuevoId(), project_id: p.id, kind, name, color, position: pos[kind]++, is_done })) });
-      ctx.extra.push({ t: "insert", tabla: "groups", filas: [{ id: ctx.nuevoId(), project_id: p.id, name: "Grupo 1", color: "#0780ee", position: 0, created_at: ahora() }] });
+      ctx.extra.push({ t: "insert", tabla: "groups", filas: [{ id: ctx.nuevoId(), project_id: p.id, name: "Subtareas", color: "#0780ee", position: 0, created_at: ahora() }] });
       return p;
     }
     if (tabla === "project_members") {

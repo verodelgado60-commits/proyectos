@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { AMARILLO, ESQUEMA, GRIS, ROJO, VERDE } from "../lib/reglas.js";
 import { useProyecto } from "../lib/datos.js";
 import { COLORES, diasHasta, fechaCorta, filtrarTareas, POR_ESTADO_SIN, posicionAlFinal, progreso } from "../lib/logica.js";
 import { Confirmar, Desplegable, TextoEditable } from "./ui.jsx";
@@ -45,7 +46,21 @@ export default function Proyecto({ proyecto, perfil, avisar, cambioLocal }) {
   const salir = async () => {
     if (await d.api.salirProyecto(proyecto, perfil.id, cambioLocal)) { avisar("Saliste del proyecto"); window.location.hash = ""; }
   };
-  const nuevoGrupo = () => d.api.crearGrupo({ name: "Nuevo grupo", color: COLORES[d.groups.length % COLORES.length], position: posicionAlFinal(d.groups) });
+  const nuevoGrupo = () => d.api.crearGrupo({ name: "Subtareas", color: COLORES[d.groups.length % COLORES.length], position: posicionAlFinal(d.groups) });
+
+  // Proyectos creados antes: estados nuevos (Stopper) con colores Liberty y "Grupo 1" → "Subtareas"
+  useEffect(() => {
+    if (d.cargando || !puedeEditar || (proyecto.esquema ?? 1) >= ESQUEMA) return;
+    const colores = { Pendiente: GRIS, "En curso": AMARILLO, Atascado: ROJO, Stopper: ROJO, Listo: VERDE };
+    for (const l of estados) {
+      if (!colores[l.name]) continue;
+      const cambios = { color: colores[l.name] };
+      if (l.name === "Atascado") cambios.name = "Stopper";
+      if (l.color !== cambios.color || cambios.name) d.api.actualizarEtiqueta(l.id, cambios);
+    }
+    for (const g of d.groups) if (g.name === "Grupo 1") d.api.actualizarGrupo(g.id, { name: "Subtareas" });
+    actualizarProyecto({ esquema: ESQUEMA });
+  }, [d.cargando, puedeEditar, proyecto.esquema]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const props = { ...d, estados, prioridades, visibles, puedeEditar, perfil, abrir: setAbierta, avisar };
 
@@ -76,8 +91,8 @@ export default function Proyecto({ proyecto, perfil, avisar, cambioLocal }) {
           {miRol === "viewer" && <span className="insignia">Solo lectura</span>}
         </div>
         <div className="barra-herramientas">
-          {puedeEditar && vista === "tabla" && <button className="boton primario" onClick={nuevoGrupo}>+ Nuevo grupo</button>}
-          <input className="buscar" type="search" placeholder="Buscar tareas…" value={filtros.texto} onChange={(e) => setFiltros({ ...filtros, texto: e.target.value })} aria-label="Buscar" />
+          {puedeEditar && vista === "tabla" && <button className="boton primario" onClick={nuevoGrupo}>+ Nueva sección de subtareas</button>}
+          <input className="buscar" type="search" placeholder="Buscar subtareas…" value={filtros.texto} onChange={(e) => setFiltros({ ...filtros, texto: e.target.value })} aria-label="Buscar" />
           <select value={filtros.responsable} onChange={(e) => setFiltros({ ...filtros, responsable: e.target.value })} aria-label="Filtrar por responsable">
             <option value="">Personas</option>
             <option value="nadie">Sin responsable</option>

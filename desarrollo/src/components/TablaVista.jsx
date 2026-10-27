@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { COLORES, estaVencida, fechaCorta, ordenar, posicionAlFinal, posicionEntre, progreso, resumenEstados, subtareasDe } from "../lib/logica.js";
-import { CeldaEtiqueta, Confirmar, Desplegable, SelectorPersona, TextoEditable } from "./ui.jsx";
+import { Confirmar, Desplegable, ListaEtiqueta, SelectorPersona, TextoEditable } from "./ui.jsx";
+
+const ESTIMACIONES = [0.5, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 40];
 
 export default function TablaVista(props) {
   const { groups, visibles, puedeEditar, api } = props;
@@ -8,7 +10,7 @@ export default function TablaVista(props) {
 
   if (!groups.length) {
     return <div className="vacio"><p>Este proyecto no tiene grupos.</p>
-      {puedeEditar && <button className="boton primario" onClick={() => api.crearGrupo({ name: "Grupo 1", color: COLORES[0], position: 1 })}>+ Crear grupo</button>}</div>;
+      {puedeEditar && <button className="boton primario" onClick={() => api.crearGrupo({ name: "Subtareas", color: COLORES[0], position: 1 })}>+ Crear sección</button>}</div>;
   }
   return (
     <div className="tabla-grupos">
@@ -51,9 +53,9 @@ function Grupo({ grupo, tareas, puedeEditar, api, estados, labels, arrastrando, 
   return (
     <div className="grupo" style={{ "--color-grupo": grupo.color }}>
       <div className="cabecera-grupo">
-        <button className="icono plegar" onClick={() => setPlegado((p) => !p)} aria-label={plegado ? "Expandir grupo" : "Plegar grupo"}>{plegado ? "▸" : "▾"}</button>
+        <button className="icono plegar" onClick={() => setPlegado((p) => !p)} aria-label={plegado ? "Expandir sección" : "Plegar sección"}>{plegado ? "▸" : "▾"}</button>
         <h2 className="nombre-grupo"><TextoEditable valor={grupo.name} editable={puedeEditar} max={120} onGuardar={(name) => api.actualizarGrupo(grupo.id, { name })} /></h2>
-        <span className="tenue pequeno">{tareas.length} {tareas.length === 1 ? "tarea" : "tareas"}</span>
+        <span className="tenue pequeno">{tareas.length} {tareas.length === 1 ? "subtarea" : "subtareas"}</span>
         {puedeEditar && (
           <Desplegable boton={({ alternar }) => <button className="icono" onClick={alternar} aria-label="Opciones del grupo">•••</button>}>
             {(cerrar) => (<>
@@ -70,7 +72,7 @@ function Grupo({ grupo, tareas, puedeEditar, api, estados, labels, arrastrando, 
           <table className="tabla" role="grid">
             <thead>
               <tr>
-                <th className="col-tarea">Tarea</th>
+                <th className="col-tarea">Subtarea</th>
                 <th>Responsable</th>
                 <th>Estado</th>
                 <th>Fecha límite</th>
@@ -79,8 +81,8 @@ function Grupo({ grupo, tareas, puedeEditar, api, estados, labels, arrastrando, 
               </tr>
             </thead>
             <tbody>
-              {tareas.map((t) => (
-                <Fila key={t.id} tarea={t} puedeEditar={puedeEditar} api={api} estados={estados} labels={labels} {...props}
+              {tareas.map((t, i) => (
+                <Fila key={t.id} numero={`${i + 1}.`} tarea={t} puedeEditar={puedeEditar} api={api} estados={estados} labels={labels} {...props}
                   arrastrable={puedeEditar} onArrastre={() => setArrastrando(t.id)} onFinArrastre={() => { setArrastrando(null); setSobre(false); }}
                   onSoltar={() => soltar(t.id)} />
               ))}
@@ -88,7 +90,10 @@ function Grupo({ grupo, tareas, puedeEditar, api, estados, labels, arrastrando, 
                 <tr className={`fila-agregar ${sobre ? "sobre" : ""}`}
                   onDragOver={(e) => { if (arrastrando) { e.preventDefault(); setSobre(true); } }} onDragLeave={() => setSobre(false)} onDrop={() => soltar(null)}>
                   <td className="col-tarea" colSpan={6}>
-                    <form onSubmit={agregar}><input className="entrada-nueva" placeholder="+ Agregar tarea" value={nueva} onChange={(e) => setNueva(e.target.value)} maxLength={300} aria-label={`Agregar tarea a ${grupo.name}`} /></form>
+                    <form onSubmit={agregar} className="form-agregar">
+                      <button type="submit" className="boton-mas" aria-label="Agregar subtarea" title="Agregar subtarea">+</button>
+                      <input className="entrada-nueva" placeholder={`${tareas.length + 1}. Escribí la subtarea y presioná Enter`} value={nueva} onChange={(e) => setNueva(e.target.value)} maxLength={300} aria-label={`Agregar subtarea a ${grupo.name}`} />
+                    </form>
                   </td>
                 </tr>
               )}
@@ -128,7 +133,7 @@ export function BarraEstados({ tareas, estados }) {
   );
 }
 
-function Fila({ tarea, tasks, puedeEditar, api, estados, prioridades, labels, project_members, perfiles, abrir, arrastrable, onArrastre, onFinArrastre, onSoltar, esSub = false }) {
+function Fila({ numero, tarea, tasks, puedeEditar, api, estados, prioridades, labels, project_members, perfiles, abrir, arrastrable, onArrastre, onFinArrastre, onSoltar, esSub = false }) {
   const [expandida, setExpandida] = useState(false);
   const [sobre, setSobre] = useState(false);
   const [nuevaSub, setNuevaSub] = useState("");
@@ -152,7 +157,8 @@ function Fila({ tarea, tasks, puedeEditar, api, estados, prioridades, labels, pr
       onDrop={(e) => { e.preventDefault(); setSobre(false); onSoltar?.(); }}>
       <td className="col-tarea">
         <div className="celda-tarea">
-          {!esSub && <button className={`icono subs ${subs.length ? "" : "sin"}`} onClick={() => setExpandida((x) => !x)} aria-label="Subtareas" title="Subtareas">
+          <span className="numero-fila">{numero}</span>
+          {!esSub && <button className={`icono subs ${subs.length ? "" : "sin"}`} onClick={() => setExpandida((x) => !x)} aria-label="Pasos" title="Pasos de esta subtarea">
             {expandida ? "▾" : "▸"}{subs.length > 0 && <small>{hechas}/{subs.length}</small>}
           </button>}
           <TextoEditable className="titulo-tarea" valor={tarea.title} editable={puedeEditar} onGuardar={(title) => cambiar({ title })} />
@@ -160,24 +166,28 @@ function Fila({ tarea, tasks, puedeEditar, api, estados, prioridades, labels, pr
         </div>
       </td>
       <td className="centro"><SelectorPersona miembros={project_members} perfiles={perfiles} valor={tarea.assignee_id} editable={puedeEditar} onCambiar={(v) => cambiar({ assignee_id: v })} /></td>
-      <td className="celda-pastilla"><CeldaEtiqueta etiquetas={estados} valor={tarea.status_id} editable={puedeEditar} onCambiar={(v) => cambiar({ status_id: v })} /></td>
+      <td className="celda-pastilla"><ListaEtiqueta etiqueta="Estado" etiquetas={estados} valor={tarea.status_id} editable={puedeEditar} onCambiar={(v) => cambiar({ status_id: v })} /></td>
       <td className={`centro ${vencida ? "vencida" : ""}`}>
         {puedeEditar
-          ? <input type="date" className="entrada-fecha" value={tarea.due_date ?? ""} onChange={(e) => cambiar({ due_date: e.target.value || null })} aria-label="Fecha límite" />
+          ? <input type="date" className="entrada-fecha campo-celda" value={tarea.due_date ?? ""} onChange={(e) => cambiar({ due_date: e.target.value || null })} aria-label="Fecha límite" />
           : <span>{fechaCorta(tarea.due_date)}</span>}
       </td>
-      <td className="celda-pastilla"><CeldaEtiqueta etiquetas={prioridades} valor={tarea.priority_id} editable={puedeEditar} onCambiar={(v) => cambiar({ priority_id: v })} /></td>
+      <td className="celda-pastilla"><ListaEtiqueta etiqueta="Prioridad" etiquetas={prioridades} valor={tarea.priority_id} editable={puedeEditar} onCambiar={(v) => cambiar({ priority_id: v })} /></td>
       <td className="centro">
         {puedeEditar
-          ? <input type="number" min="0" step="0.5" className="entrada-numero" value={tarea.estimation ?? ""} aria-label="Estimación"
-              onChange={(e) => cambiar({ estimation: e.target.value === "" ? null : Math.max(0, Number(e.target.value)) })} />
+          ? <select className="campo-celda lista-estimacion" value={tarea.estimation ?? ""} aria-label="Estimación en horas"
+              onChange={(e) => cambiar({ estimation: e.target.value === "" ? null : Number(e.target.value) })}>
+              <option value="">—</option>
+              {[...new Set([...ESTIMACIONES, ...(tarea.estimation != null ? [Number(tarea.estimation)] : [])])].sort((a, b) => a - b)
+                .map((h) => <option key={h} value={h}>{h} h</option>)}
+            </select>
           : <span>{tarea.estimation ?? ""}</span>}
       </td>
     </tr>
-    {expandida && subs.map((s) => <Fila key={s.id} tarea={s} esSub {...comunes} />)}
+    {expandida && subs.map((s, i) => <Fila key={s.id} numero={`${numero}${i + 1}`} tarea={s} esSub {...comunes} />)}
     {expandida && puedeEditar && (
       <tr className="fila-sub fila-agregar"><td className="col-tarea" colSpan={6}>
-        <form onSubmit={agregarSub}><input className="entrada-nueva" placeholder="+ Agregar subtarea" value={nuevaSub} onChange={(e) => setNuevaSub(e.target.value)} maxLength={300} /></form>
+        <form onSubmit={agregarSub}><input className="entrada-nueva" placeholder="+ Agregar paso" value={nuevaSub} onChange={(e) => setNuevaSub(e.target.value)} maxLength={300} /></form>
       </td></tr>
     )}
   </>);

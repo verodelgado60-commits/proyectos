@@ -5,7 +5,7 @@ import { BarraEstados } from "./TablaVista.jsx";
 export default function ResumenVista({ visibles, groups, estados, labels, perfiles, project_members, abrir }) {
   const prog = progreso(visibles, labels);
   const vencidas = visibles.filter((t) => estaVencida(t, labels));
-  const atascadas = visibles.filter((t) => /atasc|stuck|bloque/i.test(labels.find((l) => l.id === t.status_id)?.name ?? ""));
+  const atascadas = visibles.filter((t) => /atasc|stopper|stuck|bloque/i.test(labels.find((l) => l.id === t.status_id)?.name ?? ""));
   const totalEst = visibles.reduce((a, t) => a + (Number(t.estimation) || 0), 0);
 
   const porPersona = project_members.map((m) => ({
@@ -56,7 +56,7 @@ export default function ResumenVista({ visibles, groups, estados, labels, perfil
             <button key={t.id} className="fila-atencion" onClick={() => abrir(t.id)}>
               <span className="corta">{t.title}</span>
               <span className={estaVencida(t, labels) ? "texto-peligro pequeno" : "tenue pequeno"}>
-                {estaVencida(t, labels) ? `Vencida ${fechaCorta(t.due_date)}` : "Atascada"}
+                {estaVencida(t, labels) ? `Vencida ${fechaCorta(t.due_date)}` : "Stopper"}
               </span>
             </button>
           ))}
