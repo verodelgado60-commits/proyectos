@@ -1,0 +1,163 @@
+# Integración y despliegue continuo
+# - En cada push o pull request: prueba la base de datos (permisos/RLS) y la app.
+# - En push a main: aplica migraciones y configuración en Supabase y publica en GitHub Pages.
+# Ninguna credencial vive en el repositorio: todas se leen de GitHub → Settings → Secrets.
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: despliegue-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  pruebas-db:
+    name: Pruebas de base de datos
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aplicar entorno simulado de Supabase y migraciones
+        run: |
+          psql -v ON_ERROR_STOP=1 -q -f supabase/tests/supabase_stub.sql
+          for f in supabase/migrations/*.sql; do
+            echo "Aplicando $f"
+            psql -v ON_ERROR_STOP=1 -q -f "$f"
+          done
+      - name: Ejecutar pruebas de permisos
+        run: |
+          pip install -q psycopg2-binary
+          python3 supabase/tests/test_rls.py "host=localhost user=postgres password=postgres dbname=postgres"
+
+  pruebas-app:
+    name: Pruebas y compilación de la app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test --if-present
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Pruebas de la función de administración
+        run: |
+          deno test supabase/functions/admin-users/validar_test.ts
+          deno check supabase/functions/admin-users/index.ts
+      - run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://ejemplo.supabase.co
+          VITE_SUPABASE_ANON_KEY: clave-de-prueba
+
+  base-de-datos:
+    name: Aplicar cambios en Supabase
+    needs: pruebas-db
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Vincular proyecto
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+      - name: Aplicar migraciones de base de datos
+        run: supabase db push --linked --password "$SUPABASE_DB_PASSWORD"
+      - name: Aplicar configuración de inicio de sesión
+        run: supabase config push --project-ref "$SUPABASE_PROJECT_REF" --yes
+      - name: Guardar datos de la administradora en el servidor (cifrados)
+        env:
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          if [ -z "$ADMIN_USERNAME" ] || [ -z "$ADMIN_PASSWORD" ]; then
+            echo "::error::Faltan los secrets ADMIN_USERNAME y/o ADMIN_PASSWORD"; exit 1
+          fi
+          supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" \
+            ADMIN_USERNAME="$ADMIN_USERNAME" ADMIN_PASSWORD="$ADMIN_PASSWORD" >/dev/null
+      - name: Publicar función de administración de usuarios
+        run: supabase functions deploy admin-users --project-ref "$SUPABASE_PROJECT_REF" --use-api --no-verify-jwt
+      - name: Crear la cuenta de administradora (solo la primera vez)
+        env:
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          KEY=$(supabase projects api-keys --project-ref "$SUPABASE_PROJECT_REF" -o json \
+                | jq -r '[.[] | select(.name=="anon" or .type=="publishable")][0].api_key')
+          echo "::add-mask::$KEY"
+          for intento in 1 2 3 4 5; do
+            RESP=$(curl -sS -X POST "https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/admin-users" \
+              -H "apikey: $KEY" -H "Content-Type: application/json" -H "x-bootstrap-token: $ADMIN_PASSWORD" \
+              -d '{"action":"bootstrap"}' || true)
+            echo "Respuesta: $RESP"
+            echo "$RESP" | grep -q '"ok":true' && exit 0
+            echo "$RESP" | grep -q '"error"' && { echo "::error::$RESP"; exit 1; }
+            sleep 10
+          done
+          exit 1
+
+  publicar:
+    name: Publicar sitio en GitHub Pages
+    needs: [base-de-datos, pruebas-app]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Obtener la clave pública de Supabase (sin guardarla en el repo)
+        run: |
+          KEY=$(supabase projects api-keys --project-ref "$SUPABASE_PROJECT_REF" -o json \
+                | jq -r '[.[] | select(.name=="anon" or .type=="publishable")][0].api_key')
+          if [ -z "$KEY" ] || [ "$KEY" = "null" ]; then echo "No se pudo obtener la clave pública"; exit 1; fi
+          echo "::add-mask::$KEY"
+          echo "VITE_SUPABASE_ANON_KEY=$KEY" >> "$GITHUB_ENV"
+          echo "VITE_SUPABASE_URL=https://$SUPABASE_PROJECT_REF.supabase.co" >> "$GITHUB_ENV"
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: despliegue
+        uses: actions/deploy-pages@v4
