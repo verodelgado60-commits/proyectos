@@ -165,15 +165,15 @@ language plpgsql security definer set search_path = public as $$
 begin
   insert into project_members (project_id, user_id, role) values (new.id, new.owner_id, 'owner');
   insert into labels (project_id, kind, name, color, position, is_done) values
-    (new.id, 'status',   'Pendiente', '#c4c4c4', 0, false),
-    (new.id, 'status',   'En curso',  '#fdab3d', 1, false),
-    (new.id, 'status',   'Atascado',  '#e2445c', 2, false),
-    (new.id, 'status',   'Listo',     '#00c875', 3, true),
-    (new.id, 'priority', 'Baja',      '#579bfc', 0, false),
-    (new.id, 'priority', 'Media',     '#5559df', 1, false),
-    (new.id, 'priority', 'Alta',      '#401694', 2, false),
-    (new.id, 'priority', 'Crítica',   '#333333', 3, false);
-  insert into groups (project_id, name, color, position) values (new.id, 'Grupo 1', '#579bfc', 0);
+    (new.id, 'status',   'Pendiente', '#b0b0b4', 0, false),
+    (new.id, 'status',   'En curso',  '#ff7c00', 1, false),
+    (new.id, 'status',   'Atascado',  '#893124', 2, false),
+    (new.id, 'status',   'Listo',     '#1dcd9f', 3, true),
+    (new.id, 'priority', 'Baja',      '#4dc1ff', 0, false),
+    (new.id, 'priority', 'Media',     '#0780ee', 1, false),
+    (new.id, 'priority', 'Alta',      '#003ff9', 2, false),
+    (new.id, 'priority', 'Crítica',   '#30343c', 3, false);
+  insert into groups (project_id, name, color, position) values (new.id, 'Grupo 1', '#0780ee', 0);
   return new;
 end $$;
 

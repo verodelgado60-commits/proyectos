@@ -25,12 +25,12 @@ export function correoDeUsuario(usuario) {
 export function traducirError(e) {
   const m = (e?.message ?? String(e ?? "")).toLowerCase();
   if (m.includes("invalid login credentials")) return "Usuario o contraseña incorrectos.";
-  if (m.includes("banned") || m.includes("user is banned")) return "Esta cuenta está desactivada. Contacta a la administradora.";
+  if (m.includes("banned") || m.includes("user is banned")) return "Esta cuenta está desactivada. Contactá a la administradora.";
   if (m.includes("weak") || m.includes("password should")) return "La contraseña no cumple los requisitos: mínimo 8 caracteres, con letras y números.";
   if (m.includes("same_password") || m.includes("different from the old")) return "La nueva contraseña debe ser distinta a la actual.";
-  if (m.includes("failed to fetch") || m.includes("network")) return "Sin conexión. Revisa tu internet e intenta de nuevo.";
-  if (m.includes("row-level security") || m.includes("permission denied")) return "No tienes permiso para hacer eso en este proyecto.";
-  if (m.includes("jwt expired")) return "Tu sesión venció. Vuelve a iniciar sesión.";
+  if (m.includes("failed to fetch") || m.includes("network")) return "Sin conexión. Revisá tu internet e intentá de nuevo.";
+  if (m.includes("row-level security") || m.includes("permission denied")) return "No tenés permiso para hacer eso en este proyecto.";
+  if (m.includes("jwt expired")) return "Tu sesión venció. Volvé a iniciar sesión.";
   return e?.message ?? "Ocurrió un error inesperado.";
 }
 

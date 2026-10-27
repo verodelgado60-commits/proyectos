@@ -48,7 +48,7 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
           {perfil.is_admin && <button className={`nav-item ${ruta.tipo === "usuarios" ? "activo" : ""}`} onClick={() => ir("/usuarios")}>👥 Usuarios</button>}
           <h3 className="nav-titulo">Mis proyectos</h3>
           {cargando && <p className="tenue pequeno">Cargando…</p>}
-          {!cargando && !proyectos.length && <p className="tenue pequeno">Aún no tienes proyectos.</p>}
+          {!cargando && !proyectos.length && <p className="tenue pequeno">Aún no tenés proyectos.</p>}
           {proyectos.map((p) => (
             <button key={p.id} className={`nav-item ${actual?.id === p.id ? "activo" : ""}`} onClick={() => ir(`/p/${p.id}`)}>
               <i className="punto" style={{ background: p.color }} /> <span className="corta">{p.name}</span>
@@ -87,7 +87,7 @@ function Inicio({ perfil, proyectos, cargando, onNuevo, ir }) {
   return (
     <section className="inicio">
       <h1>Hola, {nombre}</h1>
-      <p className="tenue">Tus proyectos se guardan al instante y se sincronizan en todos tus dispositivos.</p>
+      <p className="tenue">Todo lo que cambiés se guarda al instante y se ve en vivo en todos tus dispositivos</p>
       <div className="tarjetas">
         {proyectos.map((p) => (
           <button key={p.id} className="tarjeta-proyecto" onClick={() => ir(`/p/${p.id}`)} style={{ borderTopColor: p.color }}>

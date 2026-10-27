@@ -30,7 +30,7 @@ export default function CambiarClave({ perfil, obligatorio, onListo, onCancelar,
   const formulario = (
     <form className={obligatorio ? "tarjeta-login" : ""} onSubmit={guardar} noValidate>
       {obligatorio && <div className="marca"><Logo /><span>Gestor de Proyectos</span></div>}
-      {obligatorio && <h1>Crea tu contraseña</h1>}
+      {obligatorio && <h1>Creá tu contraseña</h1>}
       {obligatorio && <p className="tenue">Hola {perfil.full_name || perfil.username}. Por seguridad, cambiá la contraseña temporal antes de continuar.</p>}
       <label className="campo"><span>Nueva contraseña</span>
         <input type="password" autoComplete="new-password" value={clave} onChange={(e) => setClave(e.target.value)} autoFocus />

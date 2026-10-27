@@ -34,7 +34,7 @@ export default function AdminUsuarios({ perfil, avisar }) {
   return (
     <section className="admin">
       <header className="cabecera-admin">
-        <div><h1>Usuarios</h1><p className="tenue">Solo tú puedes crear cuentas. Nadie puede registrarse por su cuenta.</p></div>
+        <div><h1>Usuarios</h1><p className="tenue">Solo vos podés crear cuentas. Nadie puede registrarse por su cuenta.</p></div>
         <button className="boton primario" onClick={() => setDialogo({ tipo: "crear" })}>+ Crear usuario</button>
       </header>
       {cargando ? <div className="girando" /> : (
@@ -69,7 +69,7 @@ export default function AdminUsuarios({ perfil, avisar }) {
       {dialogo?.tipo === "crear" && <CrearUsuario onClose={() => setDialogo(null)} onCreado={() => { setDialogo(null); cargar(); }} avisar={avisar} />}
       {dialogo?.tipo === "clave" && <RestablecerClave u={dialogo.u} onClose={() => setDialogo(null)} avisar={avisar} onListo={() => { setDialogo(null); cargar(); }} />}
       {dialogo?.tipo === "borrar" && <Confirmar mensaje={`¿Eliminar a ${dialogo.u.full_name || dialogo.u.username}?`}
-        detalle="Se borra su cuenta. Los proyectos de los que es dueño/a también se eliminarán. Si solo quieres quitarle el acceso, usa Desactivar."
+        detalle="Se borra su cuenta. Los proyectos de los que es dueño/a también se eliminarán. Si solo querés quitarle el acceso, usá Desactivar."
         onNo={() => setDialogo(null)} onSi={() => { const u = dialogo.u; setDialogo(null); accion({ action: "delete", id: u.id }, "Usuario eliminado"); }} />}
     </section>
   );
@@ -112,7 +112,7 @@ function CrearUsuario({ onClose, onCreado, avisar }) {
   if (creado) {
     return (
       <Modal titulo="Usuario creado" onClose={onCreado}>
-        <p>Comparte estos datos por un medio privado. No se volverán a mostrar.</p>
+        <p>Compartí estos datos por un medio privado. No se volverán a mostrar.</p>
         <div className="credencial"><span>Usuario</span><code>{creado.username}</code></div>
         <div className="credencial"><span>Contraseña temporal</span><code>{creado.clave}</code></div>
         <div className="acciones">
@@ -152,7 +152,7 @@ function RestablecerClave({ u, onClose, onListo, avisar }) {
   return (
     <Modal titulo={`Restablecer contraseña de @${u.username}`} onClose={hecho ? onListo : onClose}>
       {hecho ? (<>
-        <p>Nueva contraseña temporal (compártela por un medio privado):</p>
+        <p>Nueva contraseña temporal (compartila por un medio privado):</p>
         <div className="credencial"><span>Contraseña</span><code>{clave}</code></div>
         <div className="acciones"><button className="boton primario" onClick={onListo}>Listo</button></div>
       </>) : (
