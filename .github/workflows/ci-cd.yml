@@ -85,12 +85,41 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
+      - name: Revisar que estén las claves
+        env:
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          FALTAN=""
+          for v in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_REF ADMIN_USERNAME ADMIN_PASSWORD; do
+            [ -z "${!v}" ] && FALTAN="$FALTAN $v"
+          done
+          if [ -n "$FALTAN" ]; then echo "::error::Faltan estos secrets en GitHub:$FALTAN"; exit 1; fi
+          if ! [[ "$SUPABASE_PROJECT_REF" =~ ^[a-z]{20}$ ]]; then
+            echo "::error::SUPABASE_PROJECT_REF debe ser el ID de 20 letras minúsculas (tiene ${#SUPABASE_PROJECT_REF} caracteres)"; exit 1
+          fi
+          if ! [[ "$ADMIN_PASSWORD" =~ [A-Za-z] && "$ADMIN_PASSWORD" =~ [0-9] && ${#ADMIN_PASSWORD} -ge 8 ]]; then
+            echo "::error::ADMIN_PASSWORD debe tener al menos 8 caracteres, con letras y números"; exit 1
+          fi
+          echo "Todas las claves están configuradas."
       - name: Vincular proyecto
-        run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+        run: |
+          if ! OUT=$(supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD" 2>&1); then
+            echo "$OUT"
+            echo "::error::No se pudo conectar con Supabase: $(echo "$OUT" | tr '\n' ' ' | tail -c 400)"
+            exit 1
+          fi
       - name: Aplicar migraciones de base de datos
-        run: supabase db push --linked --password "$SUPABASE_DB_PASSWORD"
+        run: |
+          if ! OUT=$(supabase db push --linked --password "$SUPABASE_DB_PASSWORD" 2>&1); then
+            echo "$OUT"; echo "::error::Falló la migración: $(echo "$OUT" | tr '\n' ' ' | tail -c 400)"; exit 1
+          fi
+          echo "$OUT"
       - name: Aplicar configuración de inicio de sesión
-        run: supabase config push --project-ref "$SUPABASE_PROJECT_REF" --yes
+        run: |
+          if ! OUT=$(supabase config push --project-ref "$SUPABASE_PROJECT_REF" --yes 2>&1); then
+            echo "$OUT"; echo "::error::Falló la configuración: $(echo "$OUT" | tr '\n' ' ' | tail -c 400)"; exit 1
+          fi
       - name: Guardar datos de la administradora en el servidor (cifrados)
         env:
           ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
@@ -102,7 +131,10 @@ jobs:
           supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" \
             ADMIN_USERNAME="$ADMIN_USERNAME" ADMIN_PASSWORD="$ADMIN_PASSWORD" >/dev/null
       - name: Publicar función de administración de usuarios
-        run: supabase functions deploy admin-users --project-ref "$SUPABASE_PROJECT_REF" --use-api --no-verify-jwt
+        run: |
+          if ! OUT=$(supabase functions deploy admin-users --project-ref "$SUPABASE_PROJECT_REF" --use-api --no-verify-jwt 2>&1); then
+            echo "$OUT"; echo "::error::Falló la función: $(echo "$OUT" | tr '\n' ' ' | tail -c 400)"; exit 1
+          fi
       - name: Crear la cuenta de administradora (solo la primera vez)
         env:
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
