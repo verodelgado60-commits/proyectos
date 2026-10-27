@@ -46,7 +46,10 @@ export default defineConfig(({ mode }) => {
         },
       },
     ].filter(Boolean),
-    build: claude ? { outDir: "dist-claude", assetsInlineLimit: 100000000, cssCodeSplit: false } : {},
+    // La entrada de la app es app.html; index.html (raíz) es el acceso directo que publica GitHub Pages
+    build: claude
+      ? { outDir: "dist-claude", assetsInlineLimit: 100000000, cssCodeSplit: false, rollupOptions: { input: "app.html" } }
+      : { rollupOptions: { input: "app.html" } },
     test: { environment: "jsdom" },
   };
 });
