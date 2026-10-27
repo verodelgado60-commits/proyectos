@@ -68,8 +68,8 @@ function Inicio({ perfil, proyectos, cargando, puedeEscribir, onNuevo }) {
   const nombre = (perfil.full_name || "").split(" ")[0];
   return (
     <section className="inicio">
-      <h1>{nombre && nombre !== "Tú" ? `Hola, ${nombre}` : "Hola"}</h1>
-      <p className="tenue">Los cambios se guardan al instante y se ven en vivo en todos los dispositivos.</p>
+      <h1>{nombre && nombre !== "Vos" ? `Hola, ${nombre}` : "Hola"}</h1>
+      <p className="tenue">Todo lo que cambiés se guarda al instante y se ve en vivo en todos tus dispositivos</p>
       <div className="tarjetas">
         {proyectos.map((p) => (
           <button key={p.id} className="tarjeta-proyecto" onClick={() => ir(`p-${p.id}`)} style={{ borderTopColor: p.color }}>
@@ -107,7 +107,7 @@ function NuevoProyecto({ proyectos, perfil, avisar, onClose, onCreado }) {
   return (
     <Modal titulo="Nuevo proyecto" onClose={onClose}>
       <form onSubmit={crear}>
-        <label className="campo" htmlFor="np-nombre"><span>Nombre</span><input id="np-nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={120} autoFocus placeholder="Ej. Q3 - Proyecto Alpha" /></label>
+        <label className="campo" htmlFor="np-nombre"><span>Nombre</span><input id="np-nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={120} autoFocus placeholder="Ej. Q3 Proyecto Alpha" /></label>
         <label className="campo" htmlFor="np-desc"><span>Descripción (opcional)</span><textarea id="np-desc" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={2000} rows={3} /></label>
         <div className="campo"><span>Color</span><SelectorColor valor={color} onCambiar={setColor} /></div>
         <div className="acciones">

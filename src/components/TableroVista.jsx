@@ -64,7 +64,7 @@ export default function TableroVista({ visibles, estados, prioridades, labels, g
                   </article>
                 );
               })}
-              {!tarjetas.length && <p className="tenue pequeno centro">{puedeEditar ? "Arrastra tareas aquí" : "Sin tareas"}</p>}
+              {!tarjetas.length && <p className="tenue pequeno centro">{puedeEditar ? "Arrastrá tareas aquí" : "Sin tareas"}</p>}
             </div>
             {puedeEditar && groups.length > 0 && <button className="agregar-tarjeta" onClick={() => agregar(col.id)}>+ Agregar tarea</button>}
           </div>

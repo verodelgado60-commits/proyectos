@@ -57,7 +57,7 @@ export default function PanelTarea({ tarea, tasks, groups, estados, prioridades,
 
         <section className="seccion-panel">
           <h3>Descripción</h3>
-          <textarea className="ancho" rows={4} value={descripcion} disabled={!puedeEditar} maxLength={10000} placeholder={puedeEditar ? "Agrega detalles, enlaces o notas…" : "Sin descripción"}
+          <textarea className="ancho" rows={4} value={descripcion} disabled={!puedeEditar} maxLength={10000} placeholder={puedeEditar ? "Agregá detalles, enlaces o notas…" : "Sin descripción"}
             onChange={(e) => setDescripcion(e.target.value)} onBlur={() => descripcion !== (tarea.description ?? "") && cambiar({ description: descripcion })} />
         </section>
 
@@ -117,7 +117,7 @@ function Comentarios({ tareaId, perfil, perfiles, esDueno, avisar }) {
     <section className="seccion-panel">
       <h3>Comentarios</h3>
       <form onSubmit={enviar} className="nuevo-comentario">
-        <textarea rows={2} placeholder="Escribe una actualización…" value={texto} maxLength={5000} onChange={(e) => setTexto(e.target.value)}
+        <textarea rows={2} placeholder="Escribí una actualización…" value={texto} maxLength={5000} onChange={(e) => setTexto(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) enviar(e); }} />
         <button className="boton primario" disabled={!texto.trim() || enviando}>Comentar</button>
       </form>

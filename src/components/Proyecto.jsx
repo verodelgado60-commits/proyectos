@@ -113,7 +113,7 @@ export default function Proyecto({ proyecto, perfil, avisar, cambioLocal }) {
       {dialogo === "color" && <EditarProyecto proyecto={proyecto} guardar={actualizarProyecto} onClose={() => setDialogo(null)} />}
       {dialogo === "eliminar" && <Confirmar mensaje={`¿Eliminar "${proyecto.name}"?`} detalle="Se borrarán todas sus tareas, subtareas y comentarios para todo el equipo. No se puede deshacer."
         onNo={() => setDialogo(null)} onSi={() => { setDialogo(null); eliminarProyecto(); }} />}
-      {dialogo === "salir" && <Confirmar mensaje="¿Salir de este proyecto?" detalle="Dejarás de verlo hasta que el dueño te vuelva a agregar." textoSi="Salir"
+      {dialogo === "salir" && <Confirmar mensaje="¿Salir de este proyecto?" detalle="Vas a dejar de verlo hasta que te vuelvan a agregar." textoSi="Salir"
         onNo={() => setDialogo(null)} onSi={() => { setDialogo(null); salir(); }} />}
     </section>
   );

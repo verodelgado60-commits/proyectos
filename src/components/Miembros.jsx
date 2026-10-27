@@ -52,7 +52,7 @@ export default function Miembros({ proyecto, project_members, perfiles, perfil, 
           return (
             <li key={m.user_id}>
               <Avatar perfil={p} size={32} />
-              <div className="crece"><strong>{p?.full_name || p?.username}</strong>{m.user_id === perfil.id && <span className="tenue"> (tú)</span>}<div className="tenue pequeno">@{p?.username}</div></div>
+              <div className="crece"><strong>{p?.full_name || p?.username}</strong>{m.user_id === perfil.id && <span className="tenue"> (vos)</span>}<div className="tenue pequeno">@{p?.username}</div></div>
               {esDueno && m.role !== "owner"
                 ? <><select value={m.role} onChange={(e) => cambiarRol(m.user_id, e.target.value)} aria-label="Rol"><option value="editor">Editor</option><option value="viewer">Lector</option></select>
                   <button className="icono" onClick={() => quitar(m.user_id)} aria-label="Quitar del equipo">✕</button></>

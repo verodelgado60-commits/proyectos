@@ -27,7 +27,7 @@ export default function Miembros({ project_members, perfiles, perfil, esDueno, a
       {esDueno && (
         <div className="buscar-personas">
           <label className="campo" htmlFor="buscar-persona"><span>Agregar persona</span>
-            <input id="buscar-persona" ref={ref} placeholder="Escribe un nombre" value={texto} autoComplete="off"
+            <input id="buscar-persona" ref={ref} placeholder="Escribí un nombre" value={texto} autoComplete="off"
               onFocus={() => buscar(texto)} onChange={(e) => buscar(e.target.value)} />
           </label>
           {resultados.length > 0 && (
@@ -41,17 +41,17 @@ export default function Miembros({ project_members, perfiles, perfil, esDueno, a
               ))}
             </ul>
           )}
-          {texto && !resultados.length && <p className="tenue pequeno">Sin resultados. La búsqueda encuentra personas de tu organización.</p>}
+          {texto && !resultados.length && <p className="tenue pequeno">Sin resultados. La búsqueda encuentra personas de tu organización</p>}
         </div>
       )}
-      <p className="tenue pequeno">El equipo define a quién se le pueden asignar tareas. Para que alguien pueda abrir la página, compártela desde el botón Compartir de Claude: como Colaborador puede editar, y como Lector solo ver.</p>
+      <p className="tenue pequeno">El equipo define a quién se le pueden asignar tareas. Para que alguien pueda abrir la página, compartila desde el botón Compartir de Claude: como Colaborador puede editar y como Lector solo ver.</p>
       <ul className="lista-miembros">
         {project_members.map((m) => {
           const p = perfiles[m.user_id];
           return (
             <li key={m.user_id}>
               <Avatar perfil={p} size={32} />
-              <div className="crece"><strong>{p?.full_name || "Alguien"}</strong>{m.user_id === perfil.id && <span className="tenue"> (tú)</span>}</div>
+              <div className="crece"><strong>{p?.full_name || "Alguien"}</strong>{m.user_id === perfil.id && <span className="tenue"> (vos)</span>}</div>
               {m.role === "owner" ? <span className="insignia">Creó el proyecto</span>
                 : esDueno && <button className="icono" onClick={() => api.quitarMiembro(m.user_id)} aria-label="Quitar del equipo">✕</button>}
             </li>

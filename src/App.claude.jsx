@@ -22,8 +22,8 @@ export default function App() {
       <div className="pantalla-centro fondo-login">
         <div className="tarjeta-login">
           <div className="marca"><Logo /><span>Gestor de Proyectos</span></div>
-          <h1>Inicia sesión en Claude</h1>
-          <p className="tenue">Para ver y editar los proyectos, abre esta página con tu cuenta de Claude. Si alguien te compartió el enlace, entra con la cuenta a la que te invitó.</p>
+          <h1>Iniciá sesión en Claude</h1>
+          <p className="tenue">Para ver y editar los proyectos, abrí esta página con tu cuenta de Claude. Si alguien te compartió el enlace, entrá con la cuenta a la que te invitó.</p>
         </div>
       </div>
     );

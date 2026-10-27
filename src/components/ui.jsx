@@ -158,7 +158,7 @@ export function textoSobre(hex) {
 export function Logo() {
   return (
     <span className="logo" aria-hidden="true">
-      <i style={{ background: "#ff3d57" }} /><i style={{ background: "#ffcb00" }} /><i style={{ background: "#00ca72" }} />
+      <i style={{ background: "#0780ee" }} /><i style={{ background: "#4dc1ff" }} /><i style={{ background: "#ff7c00" }} />
     </span>
   );
 }

@@ -20,11 +20,11 @@ export function capacidades() {
 
 export function mensajeError(e) {
   const c = e?.code;
-  if (c === "invalid_argument") return "No tienes permiso para hacer cambios aquí. Pide acceso de Colaborador a quien te compartió la página.";
-  if (c === "quota_exceeded") return "Se llenó el espacio de la base de datos. Elimina proyectos o tareas que ya no uses.";
-  if (c === "resource_exhausted") return "Demasiados cambios seguidos. Espera unos segundos y vuelve a intentar.";
-  if (c === "revoked") return "Ya no tienes acceso a esta página.";
-  if (c === "unavailable") return "Sin conexión por un momento. Vuelve a intentar.";
+  if (c === "invalid_argument") return "No tenés permiso para hacer cambios aquí. Pedí acceso de Colaborador a quien te compartió la página.";
+  if (c === "quota_exceeded") return "Se llenó el espacio de la base de datos. Eliminá proyectos o tareas que ya no usés.";
+  if (c === "resource_exhausted") return "Demasiados cambios seguidos. Esperá unos segundos y volvé a intentar.";
+  if (c === "revoked") return "Ya no tenés acceso a esta página.";
+  if (c === "unavailable") return "Sin conexión por un momento. Volvé a intentar.";
   return e?.message || "Ocurrió un error inesperado.";
 }
 
@@ -65,7 +65,7 @@ export function useSesion() {
       if (!yo.id) { setS({ estado: "sin-acceso" }); return; }
       setS({
         estado: "listo",
-        perfil: { id: yo.id, username: "", full_name: yo.name || "Tú", avatar_color: yo.color, is_admin: admin },
+        perfil: { id: yo.id, username: "", full_name: yo.name || "Vos", avatar_color: yo.color, is_admin: admin },
         puedeEscribir: escribe !== false, // null = la plataforma no dijo: se intenta y decide el servidor
         esAdmin: admin,
       });
@@ -119,16 +119,17 @@ export async function crearProyecto({ name, description, color, position, creado
   await db.doc(`proyectos/${id}`).set(fila);
   // Etiquetas y grupo iniciales
   const etiquetas = [
-    ["status", "Pendiente", "#c4c4c4", false], ["status", "En curso", "#fdab3d", false],
-    ["status", "Atascado", "#e2445c", false], ["status", "Listo", "#00c875", true],
-    ["priority", "Baja", "#579bfc", false], ["priority", "Media", "#5559df", false],
-    ["priority", "Alta", "#401694", false], ["priority", "Crítica", "#333333", false],
+    // Colores de la paleta Liberty
+    ["status", "Pendiente", "#b0b0b4", false], ["status", "En curso", "#ff7c00", false],
+    ["status", "Atascado", "#893124", false], ["status", "Listo", "#1dcd9f", true],
+    ["priority", "Baja", "#4dc1ff", false], ["priority", "Media", "#0780ee", false],
+    ["priority", "Alta", "#003ff9", false], ["priority", "Crítica", "#30343c", false],
   ];
   const pos = { status: 0, priority: 0 };
   for (const [kind, n, c, hecha] of etiquetas) {
     await db.doc(`etiquetas/${nuevoId()}`).set({ project_id: id, kind, name: n, color: c, position: pos[kind]++, is_done: hecha });
   }
-  await db.doc(`grupos/${nuevoId()}`).set({ project_id: id, name: "Grupo 1", color: "#579bfc", position: 0, created_at: ahora() });
+  await db.doc(`grupos/${nuevoId()}`).set({ project_id: id, name: "Grupo 1", color: "#0780ee", position: 0, created_at: ahora() });
   return { id, ...fila };
 }
 

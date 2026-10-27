@@ -118,4 +118,4 @@ export function validarUsuario(u) {
     : "El usuario debe tener de 3 a 30 caracteres: letras, números, punto, guion o guion bajo.";
 }
 
-export const COLORES = ["#579bfc", "#a25ddc", "#00c875", "#fdab3d", "#e2445c", "#ff642e", "#037f4c", "#66ccff", "#ff158a", "#784bd1", "#c4c4c4", "#333333"];
+export const COLORES = ["#0780ee", "#003ff9", "#4dc1ff", "#ff7c00", "#1dcd9f", "#a63be3", "#ffbe00", "#893124", "#098e68", "#7e16c1", "#6b6e74", "#30343c"];

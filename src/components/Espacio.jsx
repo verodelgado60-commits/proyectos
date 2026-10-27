@@ -123,7 +123,7 @@ function NuevoProyecto({ proyectos, perfil, avisar, onClose, onCreado }) {
   return (
     <Modal titulo="Nuevo proyecto" onClose={onClose}>
       <form onSubmit={crear}>
-        <label className="campo"><span>Nombre</span><input value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={120} autoFocus placeholder="Ej. Q3 - Proyecto Alpha" /></label>
+        <label className="campo"><span>Nombre</span><input value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={120} autoFocus placeholder="Ej. Q3 Proyecto Alpha" /></label>
         <label className="campo"><span>Descripción (opcional)</span><textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={2000} rows={3} /></label>
         <div className="campo"><span>Color</span><SelectorColor valor={color} onCambiar={setColor} /></div>
         <div className="acciones">

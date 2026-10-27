@@ -51,7 +51,7 @@ export default function ResumenVista({ visibles, groups, estados, labels, perfil
 
         <section className="panel-resumen">
           <h3>Requieren atención</h3>
-          {![...vencidas, ...atascadas].length && <p className="tenue pequeno">Nada vencido ni atascado. 🎉</p>}
+          {![...vencidas, ...atascadas].length && <p className="tenue pequeno">Nada vencido ni atascado. ¡Qué bien!</p>}
           {[...new Map([...vencidas, ...atascadas].map((t) => [t.id, t])).values()].map((t) => (
             <button key={t.id} className="fila-atencion" onClick={() => abrir(t.id)}>
               <span className="corta">{t.title}</span>

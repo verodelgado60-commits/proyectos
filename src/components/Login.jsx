@@ -13,7 +13,7 @@ export default function Login({ avisar }) {
   const entrar = async (e) => {
     e.preventDefault();
     setError("");
-    if (!usuario.trim() || !clave) { setError("Escribe tu usuario y contraseña."); return; }
+    if (!usuario.trim() || !clave) { setError("Escribí tu usuario y contraseña."); return; }
     setEnviando(true);
     const { error: err } = await supabase.auth.signInWithPassword({ email: correoDeUsuario(usuario), password: clave });
     setEnviando(false);
@@ -39,7 +39,7 @@ export default function Login({ avisar }) {
         </label>
         {error && <p className="error" role="alert">{error}</p>}
         <button className="boton primario ancho" disabled={enviando}>{enviando ? "Entrando…" : "Entrar"}</button>
-        <p className="tenue pequeno">¿No tienes cuenta? Pídela a la administradora.</p>
+        <p className="tenue pequeno">¿No tenés cuenta? Pedila a la administradora.</p>
       </form>
     </div>
   );
