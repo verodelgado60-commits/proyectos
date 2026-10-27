@@ -1,0 +1,29 @@
+# Corre las pruebas en cada cambio de código. No publica nada: GitHub Pages sirve la raíz de main.
+name: Pruebas
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["*.md"]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desarrollo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desarrollo/package-lock.json
+      - run: npm ci
+      - name: Lógica y reglas
+        run: npm test
+      - name: Base de datos cifrada (ghdb.js) contra GitHub simulado
+        run: npm run prueba:ghdb
+      - name: La app compila
+        run: npx vite build

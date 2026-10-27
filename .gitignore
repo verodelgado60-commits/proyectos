@@ -1,9 +1,5 @@
-node_modules/
-dist/
+desarrollo/node_modules/
+desarrollo/dist/
+*.log
 .env
 .env.*
-!.env.example
-supabase/.temp/
-supabase/.branches/
-*.log
-dist-claude/

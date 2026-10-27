@@ -1,0 +1,156 @@
+"""Prueba de punta a punta en navegador del sitio compilado contra el GitHub simulado.
+Requiere: node pruebas/iniciar-entorno.mjs corriendo (puertos 4378-4380)."""
+import json, sys, urllib.request, os
+from playwright.sync_api import sync_playwright
+
+SITIO = "http://127.0.0.1:4379/"
+CONTROL = "http://127.0.0.1:4380/"
+C = "/var/tmp/gh-capturas/"
+os.makedirs(C, exist_ok=True)
+ok = fallas = 0
+errores = []
+def check(n, c):
+    global ok, fallas
+    if c: ok += 1; print("  ✔", n)
+    else: fallas += 1; print("  ✘", n)
+def control(q=""):
+    return urllib.request.urlopen(CONTROL + q).read()
+TOKEN = json.loads(control())["token"]
+
+def observar(p, quien):
+    p.on("pageerror", lambda e: errores.append(f"{quien}: {e}"))
+    p.on("console", lambda m: m.type == "error" and "status of 4" not in m.text and errores.append(f"{quien}: {m.text}"))
+
+def entrar(p, usuario, clave):
+    p.goto(SITIO); p.wait_for_selector("text=Iniciar sesión")
+    p.fill("input[autocomplete=username]", usuario); p.fill("input[type=password]", clave); p.click("button:has-text('Entrar')")
+
+def crear_clave(p, nueva):
+    p.wait_for_selector("text=Creá tu contraseña")
+    pw = p.locator("input[type=password]"); pw.nth(0).fill(nueva); pw.nth(1).fill(nueva); p.click("button:has-text('Guardar contraseña')")
+
+with sync_playwright() as pw:
+    b = pw.chromium.launch(executable_path="/opt/pw-browsers/chromium-1243/chrome-linux64/chrome", args=["--no-sandbox"])
+    ctx = b.new_context(viewport={"width": 1366, "height": 860}, accept_downloads=True)
+    v = ctx.new_page(); observar(v, "vero")
+
+    print("Ingreso de la administradora")
+    entrar(v, "VeronicaDelgado1", "mala-1234"); v.wait_for_selector("text=Usuario o contraseña incorrectos.")
+    check("contraseña incorrecta: mensaje claro", True)
+    entrar(v, "VeronicaDelgado1", "Temporal-Prueba-9")
+    v.wait_for_selector("text=Conectá GitHub"); check("primera vez pide el token de GitHub", True)
+    v.screenshot(path=C + "01_token.png")
+    v.fill("#token-gh", "no-es-token"); v.click("button:has-text('Guardar token')"); v.wait_for_selector("text=no parece un token")
+    check("rechaza texto que no es token", True)
+    v.fill("#token-gh", TOKEN); v.click("button:has-text('Guardar token')")
+    crear_clave(v, "Vero-Segura-2026"); v.wait_for_selector("text=Hola, Verónica")
+    check("tras token y contraseña nueva entra al espacio", True)
+    check("el token quedó cifrado (no aparece en usuarios.json)", TOKEN.encode() not in control("?archivo=usuarios.json"))
+
+    print("Proyecto, tareas, comentarios y adjuntos")
+    v.click("text=+ Nuevo proyecto"); v.locator(".modal input").first.fill("Q3 Proyecto Alpha"); v.click(".modal button:has-text('Crear proyecto')")
+    v.wait_for_selector("h1:has-text('Q3 Proyecto Alpha')")
+    for t in ["Requisitos", "Criterios de éxito", "Presupuesto"]:
+        v.fill("input[placeholder='+ Agregar tarea']", t); v.keyboard.press("Enter"); v.wait_for_selector(f"text={t}")
+    fila = lambda i: v.locator("tr.fila").nth(i)
+    fila(0).locator("td.celda-pastilla").nth(0).locator("button.pastilla").click(); v.locator(".selector-etiquetas button:has-text('Listo')").click()
+    fila(1).locator("td.celda-pastilla").nth(0).locator("button.pastilla").click(); v.locator(".selector-etiquetas button:has-text('En curso')").click()
+    check("3 tareas con estados", v.locator("tr.fila").count() == 3)
+    v.wait_for_selector("text=Guardado en GitHub", timeout=15000); check("indicador: guardado en GitHub", True)
+    check("datos.json en GitHub está cifrado", b"Requisitos" not in control("?archivo=datos.json"))
+    fila(0).locator("button.abrir").click(); v.wait_for_selector(".panel-tarea")
+    v.fill(".nuevo-comentario textarea", "Aprobado por el equipo"); v.click("button:has-text('Comentar')")
+    v.wait_for_selector(".texto-comentario:has-text('Aprobado por el equipo')"); check("comentario publicado", True)
+    contenido = bytes((i * 31) % 256 for i in range(250000))
+    v.set_input_files(".subir-adjunto input[type=file]", files=[{"name": "informe.pdf", "mimeType": "application/pdf", "buffer": contenido}])
+    v.wait_for_selector(".lista-adjuntos >> text=informe.pdf", timeout=20000); check("adjunto subido", True)
+    with v.expect_download() as d: v.click(".nombre-adjunto:has-text('informe.pdf')")
+    bajado = open(d.value.path(), "rb").read()
+    check("adjunto descargado y descifrado es idéntico", bajado == contenido)
+    v.screenshot(path=C + "02_panel.png")
+    v.click(".panel-tarea button[aria-label=Cerrar]")
+    v.wait_for_selector("text=Guardado en GitHub", timeout=15000)
+    v.reload(); v.wait_for_selector("text=Requisitos", timeout=15000)
+    check("recarga: la sesión sigue y los datos están", v.locator("tr.fila").count() == 3)
+    v.screenshot(path=C + "03_tabla.png", full_page=True)
+
+    print("Usuarios y permisos")
+    v.click("button.nav-item:has-text('Usuarios y permisos')"); v.wait_for_selector("h1:has-text('Usuarios y permisos')")
+    claves = {}
+    for usuario, nombre, rol in [("ana.mora", "Ana Mora", "editor"), ("beto", "Beto Solís", "lector")]:
+        v.click("button:has-text('+ Crear usuario')"); v.fill("#nu-usuario", usuario); v.fill("#nu-nombre", nombre); v.select_option("#nu-rol", rol)
+        claves[usuario] = v.input_value("#clave-temporal")
+        v.click(".modal button:has-text('Crear usuario')"); v.wait_for_selector("text=Usuario creado"); v.click("button:has-text('Listo')")
+        v.wait_for_selector(f".lista-usuarios >> text={nombre}")
+    check("crea editora y lector con clave temporal", len(claves) == 2)
+    v.screenshot(path=C + "04_usuarios.png")
+    v.click("button.nav-item:has-text('Q3 Proyecto Alpha')"); v.click("button:has-text('Equipo')")
+    for usuario, rol in [("ana.mora", "editor"), ("beto", "viewer")]:
+        v.fill(".modal input[placeholder='Nombre de usuario']", usuario); v.select_option(".modal select[aria-label=Rol] >> nth=0", rol); v.click(".modal button:has-text('Agregar')")
+        v.wait_for_selector(f".lista-miembros >> text=@{usuario}")
+    check("agrega a ambos al equipo del proyecto", True)
+    v.keyboard.press("Escape")
+
+    a = b.new_context(viewport={"width": 1280, "height": 800}).new_page(); observar(a, "ana")
+    entrar(a, "ana.mora", claves["ana.mora"]); crear_clave(a, "Ana-Segura-2026")
+    a.wait_for_selector("text=Hola, Ana"); check("editora entra sin pedir token (lo abre con su llave)", True)
+    a.click("button.nav-item:has-text('Q3 Proyecto Alpha')"); a.wait_for_selector("text=Requisitos")
+    a.fill("input[placeholder='+ Agregar tarea']", "Tarea de Ana"); a.keyboard.press("Enter"); a.wait_for_selector("text=Guardado en GitHub", timeout=15000)
+    v.wait_for_selector("text=Tarea de Ana", timeout=35000); check("el cambio de la editora aparece solo en la otra sesión (≤ 20 s)", True)
+
+    l = b.new_context(viewport={"width": 1280, "height": 800}, accept_downloads=True).new_page(); observar(l, "beto")
+    raw_antes = json.loads(control())["raw"]
+    entrar(l, "beto", claves["beto"]); l.wait_for_selector("text=Hola, Beto")
+    check("lector entra sin cambio obligatorio de clave ni token", l.locator("text=Creá tu contraseña").count() == 0)
+    l.click("button.nav-item:has-text('Q3 Proyecto Alpha')"); l.wait_for_selector("text=Tarea de Ana")
+    check("lector lee desde raw.githubusercontent", json.loads(control())["raw"] > raw_antes)
+    check("lector: solo lectura (sin agregar tareas ni nuevo proyecto)", l.locator("input[placeholder='+ Agregar tarea']").count() == 0 and l.locator("text=+ Nuevo proyecto").count() == 0)
+    l.locator("tr.fila:has-text('Requisitos') button.abrir").click(); l.wait_for_selector(".lista-adjuntos >> text=informe.pdf")
+    with l.expect_download() as d2: l.click(".nombre-adjunto:has-text('informe.pdf')")
+    check("lector descarga el adjunto", open(d2.value.path(), "rb").read() == contenido)
+    check("lector no ve botón para borrar adjuntos", l.locator(".lista-adjuntos button[aria-label^=Eliminar]").count() == 0)
+
+    print("Quitar acceso (rotación de llaves)")
+    v.click("button.nav-item:has-text('Usuarios y permisos')"); v.locator(".lista-usuarios li:has-text('Ana Mora') button:has-text('Quitar acceso')").click()
+    v.locator(".modal button:has-text('Quitar acceso')").click()
+    v.wait_for_selector("text=Renová el token de GitHub", timeout=30000); check("pide renovar el token tras quitar a una editora", True)
+    v.click("button:has-text('Entendido')")
+    a.wait_for_selector("text=Iniciar sesión", timeout=35000); check("la sesión de la editora se cierra sola", True)
+    entrar(a, "ana.mora", "Ana-Segura-2026"); a.wait_for_selector("text=Usuario o contraseña incorrectos."); check("la editora ya no puede entrar", True)
+    l.wait_for_selector("text=Iniciar sesión", timeout=35000)
+    entrar(l, "beto", claves["beto"]); l.wait_for_selector("text=Hola, Beto"); l.click("button.nav-item:has-text('Q3 Proyecto Alpha')")
+    l.wait_for_selector("text=Tarea de Ana"); check("el lector recibe la llave nueva y sigue leyendo", True)
+    check("la administradora sigue trabajando sin interrupción", v.locator("text=Usuarios y permisos").count() >= 1)
+    v.click(".cuenta .nav-item"); v.click("text=Cerrar sesión"); v.wait_for_selector("text=Iniciar sesión")
+    entrar(v, "VeronicaDelgado1", "Vero-Segura-2026"); v.wait_for_selector("text=Hola, Verónica")
+    v.click("button.nav-item:has-text('Q3 Proyecto Alpha')"); v.fill("input[placeholder='+ Agregar tarea']", "Después de rotar"); v.keyboard.press("Enter")
+    v.wait_for_selector("text=Guardado en GitHub", timeout=15000); check("la administradora sigue guardando tras la rotación", True)
+
+    print("Seguridad del sitio")
+    f = b.new_context().new_page()
+    f.set_content(f'<iframe id="x" src="{SITIO}" width="800" height="600"></iframe>'); f.wait_for_timeout(2500)
+    marco = f.frame_locator("#x")
+    visible = f.frames[1].evaluate("getComputedStyle(document.documentElement).visibility") if len(f.frames) > 1 else "sin marco"
+    print("     visibilidad dentro del iframe:", visible, "· página superior:", f.url)
+    check("dentro de un iframe ajeno el sitio no se muestra", visible == "hidden" or f.url.startswith(SITIO))
+    reloj = b.new_context().new_page(); observar(reloj, "reloj")
+    reloj.clock.install()
+    entrar(reloj, "beto", claves["beto"]); reloj.wait_for_selector("text=Hola, Beto")
+    reloj.clock.fast_forward("16:00"); reloj.wait_for_selector("text=sin actividad", timeout=10000)
+    check("se cierra la sesión tras 15 minutos sin actividad", reloj.locator("text=Iniciar sesión").count() == 1)
+    control("?version=209912312359")
+    n = b.new_context().new_page(); cargas = []
+    n.on("load", lambda: cargas.append(n.url))
+    n.goto(SITIO); n.wait_for_selector("text=Hay una versión nueva", timeout=15000); n.wait_for_timeout(3000)
+    check(f"detecta versión nueva y avisa, sin bucle de recargas ({len(cargas)} carga/s)", len(cargas) <= 2)
+    n.click(".aviso-version button"); n.wait_for_timeout(2000)
+    check("el botón Actualizar recarga con ?v= nuevo una sola vez", "v=209912312359" in n.url and len(cargas) <= 3)
+    control("?version=")
+    m = b.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, device_scale_factor=2).new_page()
+    entrar(m, "beto", claves["beto"]); m.wait_for_selector("text=Hola, Beto"); m.screenshot(path=C + "05_movil.png")
+    check("celular: sin desplazamiento horizontal", m.evaluate("document.documentElement.scrollWidth <= innerWidth"))
+    b.close()
+
+print("Errores de consola:", errores[:6] or "ninguno")
+print(f"\nResultado: {ok} OK, {fallas} fallidas")
+sys.exit(1 if fallas or errores else 0)

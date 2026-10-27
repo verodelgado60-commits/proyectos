@@ -1,53 +1,43 @@
 # Gestor de Proyectos
 
-> **Versión en uso: dentro de Claude.** La app publicada vive como página de Claude, con su propia base de datos y la identidad de Claude (el acceso se da con el botón Compartir). Se compila con `npm run build:claude` y se publica desde la conversación con Claude. La versión con GitHub Pages + Supabase queda en el código como alternativa y solo se despliega si se crea la variable de Actions `USAR_SUPABASE = true`.
+Plataforma web **estática** publicada con GitHub Pages. Guarda sus datos **cifrados** en este mismo repositorio (rama `datos`). Sin Supabase, sin servidor y sin servicios externos: el navegador cifra todo y habla directamente con la API de GitHub.
 
-Aplicación web de gestión de proyectos (estilo Monday.com): proyectos, grupos, tareas, subtareas, estados y prioridades editables, responsables, fechas, estimaciones y comentarios. Incluye vista de **tabla**, **tablero** (arrastrar y soltar) y **resumen**. Se adapta a celular, y los cambios se sincronizan en tiempo real entre dispositivos.
+**Sitio:** https://verodelgado60-commits.github.io/proyectos/
+
+## Qué hace
+Proyectos estilo Monday: grupos, tareas, subtareas, estados y prioridades editables, responsables, fechas, estimaciones, comentarios y **adjuntos cifrados**. Vistas de tabla, tablero y resumen; adaptable a computadora, tablet y celular.
 
 ## Cómo funciona
 
-| Pieza | Servicio | Qué hace |
-|---|---|---|
-| Código y publicación | GitHub + GitHub Pages | Cada cambio en `main` se prueba y se publica automáticamente |
-| Datos, inicio de sesión y tiempo real | Supabase | Postgres con reglas de seguridad (RLS), contraseñas con hash bcrypt |
-| Administración de usuarios | Función `admin-users` (Supabase) | Crear, desactivar, restablecer y eliminar cuentas |
+| Rama | Contenido |
+|---|---|
+| `main` | El sitio: `index.html`, `app.js`, `ghdb.js`, `config.js`, `estilos.css`, `lib/` (React y fuentes, sin CDNs) y `desarrollo/` (código fuente y pruebas) |
+| `datos` | `datos.json` (todas las tablas, AES-GCM 256), `usuarios.json` (llaves envueltas), `adjuntos/` (cada archivo cifrado) |
 
-- **Cambios de código** → se suben a GitHub → GitHub Actions prueba, actualiza la base de datos y publica el sitio.
-- **Cambios de datos** (proyectos, tareas…) → se guardan directo en la base de datos desde la app, al instante, sin volver a publicar.
+- **Ingreso:** usuario + contraseña → PBKDF2-SHA256 (250 000 iteraciones) → abre la llave de datos K. Administración y edición abren también W, que descifra el token de GitHub. Lectura: solo K. La contraseña nunca sale del navegador.
+- **Guardado:** cola de cambios con espera de 400 ms; al guardar se vuelve a leer el archivo remoto, se reaplican los cambios y se hace `PUT` con su `sha`. Si hay conflicto (409/422) se reintenta; si falla, los cambios no se descartan: quedan cifrados en el navegador y se reintenta cada 15 s.
+- **Cambios de otras personas:** se revisan cada 20 s con `ETag` (las respuestas 304 no gastan cupo) sin interrumpir a quien escribe.
+- **Sin token o sin cupo:** se lee desde `raw.githubusercontent.com` (puede tardar hasta unos 5 min en reflejar cambios por la caché de GitHub).
+- **Quitar acceso:** se generan llaves nuevas, se vuelven a cifrar datos y adjuntos, y cada persona que sigue recibe la llave nueva con su llave pública (ECDH P-256), sin que nadie conozca su contraseña.
 
 ## Seguridad
+- Content-Security-Policy: `default-src 'self'; script-src 'self'; connect-src` solo a `api.github.com` y `raw.githubusercontent.com`; `object-src 'none'`.
+- No se muestra dentro de iframes de otras páginas.
+- Límite de intentos de ingreso, sesión en `sessionStorage` y cierre por 15 min de inactividad.
+- Nunca se usa `innerHTML` con datos de usuarios.
+- Scripts versionados (`?v=AAAAMMDDhhmm`) y revisión automática de versión nueva.
 
-- No hay registro público: solo la administradora crea cuentas, desde **Usuarios** dentro de la app.
-- Cada cuenta nueva recibe una contraseña temporal que debe cambiarse en el primer ingreso (mínimo 8 caracteres, con letras y números).
-- Las contraseñas nunca se guardan en texto plano. Supabase Auth las guarda con hash bcrypt.
-- Cada proyecto tiene roles: **Dueño** (administra el equipo), **Editor** (crea y edita) y **Lector** (ve y comenta). Esto lo impone la base de datos, no solo la pantalla.
-- Ninguna credencial vive en este repositorio: todas están en *Settings → Secrets and variables → Actions*.
+**Límites que conviene conocer:**
+- El repositorio es público: cualquiera puede descargar los archivos cifrados. Lo que los protege es la contraseña, así que usá contraseñas largas (mínimo 8 caracteres con letras y números; mejor 12 o más).
+- Quien tiene rol Editor o Administradora puede abrir el token de GitHub. Dale esos roles solo a personas de confianza, y al quitarle el acceso a una de ellas, renová el token.
+- Los permisos por proyecto (dueño, editor, lector) los aplica la plataforma. Todas las cuentas abren la misma llave de datos.
+- Las personas con rol Lector no pueden cambiar su contraseña: lo hace la administradora.
 
-## Secrets necesarios en GitHub
-
-| Nombre | Valor |
-|---|---|
-| `SUPABASE_ACCESS_TOKEN` | Token de cuenta de Supabase |
-| `SUPABASE_DB_PASSWORD` | Contraseña de la base de datos |
-| `SUPABASE_PROJECT_REF` | ID del proyecto (20 letras) |
-| `ADMIN_USERNAME` | Usuario de la administradora |
-| `ADMIN_PASSWORD` | Contraseña inicial de la administradora (se pide cambiarla al entrar) |
-
-## Estructura
-
-```
-src/                       App (React + Vite)
-supabase/migrations/       Esquema de la base de datos (se aplica solo desde GitHub)
-supabase/functions/        Función segura de administración de usuarios
-supabase/tests/            Pruebas de permisos (RLS)
-pruebas/e2e-local.mjs      Prueba de punta a punta contra una copia local de Supabase
-.github/workflows/         Integración y despliegue continuo
-```
-
-## Pruebas
-
+## Desarrollo
 ```bash
-npm test                                   # lógica de la app
-deno test supabase/functions/admin-users   # validaciones de la función
-python3 supabase/tests/test_rls.py "<conexión>"   # permisos de la base de datos
+cd desarrollo
+npm ci
+npm test               # lógica y reglas
+npm run prueba:ghdb    # ghdb.js contra un GitHub simulado
+npm run publicar       # compila y copia el sitio a la raíz con ?v= nuevo
 ```
