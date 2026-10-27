@@ -138,6 +138,23 @@ export function useProyecto(proyectoId, avisar) {
         if (!r.error) setDatos((d) => ({ ...d, tasks: d.tasks.map((t) => ({ ...t, status_id: t.status_id === id ? null : t.status_id, priority_id: t.priority_id === id ? null : t.priority_id })) }));
         return r;
       }),
+    actualizarProyecto: async (proyecto, cambios, cambioLocal) => {
+      cambioLocal?.({ eventType: "UPDATE", new: { ...proyecto, ...cambios } });
+      const { error } = await supabase.from("projects").update(cambios).eq("id", proyecto.id);
+      if (error) { avisar?.(traducirError(error), "error"); cambioLocal?.({ eventType: "UPDATE", new: proyecto }); }
+    },
+    eliminarProyecto: async (proyecto, cambioLocal) => {
+      const { error } = await supabase.from("projects").delete().eq("id", proyecto.id);
+      if (error) { avisar?.(traducirError(error), "error"); return false; }
+      cambioLocal?.({ eventType: "DELETE", old: { id: proyecto.id } });
+      return true;
+    },
+    salirProyecto: async (proyecto, usuarioId, cambioLocal) => {
+      const { error } = await supabase.from("project_members").delete().eq("project_id", proyecto.id).eq("user_id", usuarioId);
+      if (error) { avisar?.(traducirError(error), "error"); return false; }
+      cambioLocal?.({ eventType: "DELETE", old: { id: proyecto.id } });
+      return true;
+    },
     recargar: cargar,
   };
 

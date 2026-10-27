@@ -65,6 +65,8 @@ jobs:
         run: |
           deno test supabase/functions/admin-users/validar_test.ts
           deno check supabase/functions/admin-users/index.ts
+      - name: Compilar la versión que vive dentro de Claude
+        run: npm run build:claude
       - run: npm run build
         env:
           VITE_SUPABASE_URL: https://ejemplo.supabase.co
@@ -73,7 +75,8 @@ jobs:
   base-de-datos:
     name: Aplicar cambios en Supabase
     needs: pruebas-db
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    # Opcional: solo si se activa la versión con Supabase (variable USAR_SUPABASE = true)
+    if: vars.USAR_SUPABASE == 'true' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -156,7 +159,7 @@ jobs:
   publicar:
     name: Publicar sitio en GitHub Pages
     needs: [base-de-datos, pruebas-app]
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    if: vars.USAR_SUPABASE == 'true' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read

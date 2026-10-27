@@ -1,5 +1,7 @@
 # Gestor de Proyectos
 
+> **Versión en uso: dentro de Claude.** La app publicada vive como página de Claude, con su propia base de datos y la identidad de Claude (el acceso se da con el botón Compartir). Se compila con `npm run build:claude` y se publica desde la conversación con Claude. La versión con GitHub Pages + Supabase queda en el código como alternativa y solo se despliega si se crea la variable de Actions `USAR_SUPABASE = true`.
+
 Aplicación web de gestión de proyectos (estilo Monday.com): proyectos, grupos, tareas, subtareas, estados y prioridades editables, responsables, fechas, estimaciones y comentarios. Incluye vista de **tabla**, **tablero** (arrastrar y soltar) y **resumen**. Se adapta a celular, y los cambios se sincronizan en tiempo real entre dispositivos.
 
 ## Cómo funciona

@@ -1,13 +1,7 @@
 import { useState } from "react";
 import { correoDeUsuario, supabase, traducirError } from "../lib/supabase.js";
 
-export function Logo() {
-  return (
-    <span className="logo" aria-hidden="true">
-      <i style={{ background: "#ff3d57" }} /><i style={{ background: "#ffcb00" }} /><i style={{ background: "#00ca72" }} />
-    </span>
-  );
-}
+export { Logo } from "./ui.jsx";
 
 export default function Login({ avisar }) {
   const [usuario, setUsuario] = useState("");

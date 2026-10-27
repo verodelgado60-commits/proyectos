@@ -154,3 +154,12 @@ export function textoSobre(hex) {
   const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
   return L > 0.45 ? "#1f1f1f" : "#ffffff";
 }
+
+export function Logo() {
+  return (
+    <span className="logo" aria-hidden="true">
+      <i style={{ background: "#ff3d57" }} /><i style={{ background: "#ffcb00" }} /><i style={{ background: "#00ca72" }} />
+    </span>
+  );
+}
+

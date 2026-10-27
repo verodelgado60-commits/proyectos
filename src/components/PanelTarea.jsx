@@ -99,7 +99,7 @@ export default function PanelTarea({ tarea, tasks, groups, estados, prioridades,
 }
 
 function Comentarios({ tareaId, perfil, perfiles, esDueno, avisar }) {
-  const { comentarios, cargando, agregar, editar, borrar } = useComentarios(tareaId, avisar);
+  const { comentarios, cargando, agregar, editar, borrar, autores = {} } = useComentarios(tareaId, avisar);
   const [texto, setTexto] = useState("");
   const [editando, setEditando] = useState(null);
   const [textoEdit, setTextoEdit] = useState("");
@@ -125,7 +125,7 @@ function Comentarios({ tareaId, perfil, perfiles, esDueno, avisar }) {
       {!cargando && !comentarios.length && <p className="tenue pequeno">Aún no hay comentarios.</p>}
       <ul className="comentarios">
         {[...comentarios].reverse().map((c) => {
-          const autor = perfiles[c.author_id];
+          const autor = autores[c.author_id] || perfiles[c.author_id];
           const mio = c.author_id === perfil.id;
           return (
             <li key={c.id} className="comentario">

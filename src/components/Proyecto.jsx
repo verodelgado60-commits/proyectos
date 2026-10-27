@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { supabase, traducirError } from "../lib/supabase.js";
 import { useProyecto } from "../lib/datos.js";
 import { COLORES, filtrarTareas, POR_ESTADO_SIN, posicionAlFinal, progreso } from "../lib/logica.js";
 import { Confirmar, Desplegable, TextoEditable } from "./ui.jsx";
@@ -24,7 +23,8 @@ export default function Proyecto({ proyecto, perfil, avisar, cambioLocal }) {
   const [abierta, setAbierta] = useState(null);
   const [dialogo, setDialogo] = useState(null);
 
-  const miRol = d.project_members.find((m) => m.user_id === perfil.id)?.role ?? "viewer";
+  // La versión en Claude informa el rol directamente; la de Supabase lo toma del equipo
+  const miRol = d.miRol ?? d.project_members.find((m) => m.user_id === perfil.id)?.role ?? "viewer";
   const puedeEditar = miRol === "owner" || miRol === "editor";
   const esDueno = miRol === "owner";
   const estados = d.labels.filter((l) => l.kind === "status");
@@ -36,18 +36,12 @@ export default function Proyecto({ proyecto, perfil, avisar, cambioLocal }) {
 
   const cambiarVista = (v) => { setVista(v); try { localStorage.setItem("vista", v); } catch { /* opcional */ } };
 
-  const actualizarProyecto = async (cambios) => {
-    cambioLocal({ eventType: "UPDATE", new: { ...proyecto, ...cambios } });
-    const { error } = await supabase.from("projects").update(cambios).eq("id", proyecto.id);
-    if (error) { avisar(traducirError(error), "error"); cambioLocal({ eventType: "UPDATE", new: proyecto }); }
-  };
+  const actualizarProyecto = (cambios) => d.api.actualizarProyecto(proyecto, cambios, cambioLocal);
   const eliminarProyecto = async () => {
-    const { error } = await supabase.from("projects").delete().eq("id", proyecto.id);
-    if (error) avisar(traducirError(error), "error"); else { avisar("Proyecto eliminado"); window.location.hash = ""; cambioLocal({ eventType: "DELETE", old: { id: proyecto.id } }); }
+    if (await d.api.eliminarProyecto(proyecto, cambioLocal)) { avisar("Proyecto eliminado"); window.location.hash = ""; }
   };
   const salir = async () => {
-    const { error } = await supabase.from("project_members").delete().eq("project_id", proyecto.id).eq("user_id", perfil.id);
-    if (error) avisar(traducirError(error), "error"); else { avisar("Saliste del proyecto"); window.location.hash = ""; cambioLocal({ eventType: "DELETE", old: { id: proyecto.id } }); }
+    if (await d.api.salirProyecto(proyecto, perfil.id, cambioLocal)) { avisar("Saliste del proyecto"); window.location.hash = ""; }
   };
   const nuevoGrupo = () => d.api.crearGrupo({ name: "Nuevo grupo", color: COLORES[d.groups.length % COLORES.length], position: posicionAlFinal(d.groups) });
 
