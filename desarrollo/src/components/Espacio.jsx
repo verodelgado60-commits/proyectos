@@ -46,7 +46,7 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
   return (
     <div className={`espacio ${menuMovil ? "menu-abierto" : ""}`}>
       <aside className="barra-lateral" aria-label="Navegación">
-        <div className="marca"><Logo /><span>Gestor</span></div>
+        <div className="marca"><Logo /><span>Proyectos</span></div>
         {escribe && <button className="boton primario ancho" onClick={() => setNuevo(true)}>+ Nuevo proyecto</button>}
         <nav>
           <button className={`nav-item ${ruta.tipo === "inicio" ? "activo" : ""}`} onClick={() => ir("")}>🏠 Inicio</button>
