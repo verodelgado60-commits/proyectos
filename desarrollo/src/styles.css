@@ -380,3 +380,41 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .menu-info .estado-conexion { margin-top: 6px; justify-self: start; }
 .nota { margin-top: 18px; max-width: 70ch; }
 .acciones-usuario select { min-width: 140px; }
+
+/* Campanita de notificaciones */
+.campana { position: relative; }
+.boton-campana { position: relative; display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--borde); background: var(--superficie); color: var(--texto); }
+.boton-campana:hover { background: var(--hover); }
+.boton-campana.con-avisos { color: var(--primario); border-color: var(--primario); }
+.contador-campana { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--resalte); color: #ffffff; font-size: 11px; font-weight: 700; display: grid; place-items: center; line-height: 1; }
+.campana .menu { width: min(340px, calc(100vw - 32px)); padding: 0; }
+.panel-avisos { display: grid; }
+.cabecera-avisos { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--borde-suave); }
+.vacio-avisos { padding: 14px; margin: 0; }
+.lista-avisos { list-style: none; margin: 0; padding: 6px; display: grid; gap: 4px; max-height: 360px; overflow-y: auto; }
+.aviso { display: flex; gap: 10px; align-items: flex-start; width: 100%; text-align: left; border: 0; background: var(--activo-bg); color: var(--texto); padding: 10px 12px; border-radius: 8px; line-height: 1.4; }
+.aviso:hover { filter: brightness(.97); }
+.aviso.leido { background: transparent; color: var(--tenue); }
+.punto-aviso { flex: none; width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; background: var(--resalte); }
+.aviso-vencido .punto-aviso { background: var(--peligro); }
+.aviso.leido .punto-aviso { background: var(--borde); }
+.campana-movil { display: none; }
+/* Fecha de vencimiento */
+.chip-vence { font-size: 12px; padding: 3px 10px; border-radius: 999px; background: var(--hover); color: var(--tenue); border: 1px solid transparent; white-space: nowrap; }
+button.chip-vence { cursor: pointer; }
+.chip-vence.pronto { background: var(--ambar-bg); color: var(--ambar-fg); font-weight: 600; }
+.chip-vence.vencido { background: var(--peligro-bg); color: var(--peligro); font-weight: 600; }
+.chip-vence.editando { display: inline-flex; gap: 6px; align-items: center; }
+.chip-vence.editando input { padding: 2px 6px; font-size: 12px; }
+.vence-tarjeta { justify-self: start; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--hover); color: var(--tenue); }
+.vence-tarjeta.pronto { background: var(--ambar-bg); color: var(--ambar-fg); font-weight: 600; }
+@media (max-width: 860px) {
+  .campana-movil { display: inline-flex; position: fixed; top: calc(10px + env(safe-area-inset-top, 0px)); right: calc(10px + env(safe-area-inset-right, 0px)); z-index: 20; }
+  .campana-movil .boton-campana { width: 40px; height: 40px; }
+  .campana-movil .menu { right: 0; left: auto; }
+  .cabecera-proyecto { padding-right: 60px; }
+}
+.barra-lateral .campana .menu { position: fixed; top: calc(64px + env(safe-area-inset-top, 0px)); left: calc(16px + env(safe-area-inset-left, 0px)); z-index: 60; }
+.aviso { font-weight: 400; font-size: 13px; }
+.aviso:not(.leido) .texto-aviso { font-weight: 500; }
+.cabecera-avisos .enlace { white-space: nowrap; font-size: 13px; }

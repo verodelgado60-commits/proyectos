@@ -119,3 +119,31 @@ export function validarUsuario(u) {
 }
 
 export const COLORES = ["#0780ee", "#003ff9", "#4dc1ff", "#ff7c00", "#1dcd9f", "#a63be3", "#ffbe00", "#893124", "#098e68", "#7e16c1", "#6b6e74", "#30343c"];
+
+// ---------- Avisos de vencimiento de proyectos ----------
+const fechaLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+export function diasHasta(iso, hoy = new Date()) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const [hy, hm, hd] = fechaLocal(hoy).split("-").map(Number);
+  return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(hy, hm - 1, hd)) / 86400000);
+}
+// Proyectos que vencen mañana u hoy, o que ya vencieron (hasta 30 días atrás)
+export function avisosDeVencimiento(proyectos, nombre, hoy = new Date()) {
+  const quien = nombre ? `${nombre}, el` : "El";
+  return proyectos
+    .filter((p) => p.due_date)
+    .map((p) => ({ p, dias: diasHasta(p.due_date, hoy) }))
+    .filter(({ dias }) => dias <= 1 && dias >= -30)
+    .sort((a, b) => a.dias - b.dias)
+    .map(({ p, dias }) => ({
+      id: `${p.id}:${p.due_date}:${dias < 0 ? "vencido" : dias === 0 ? "hoy" : "pronto"}`,
+      proyectoId: p.id,
+      tipo: dias < 0 ? "vencido" : dias === 0 ? "hoy" : "pronto",
+      texto: dias < 0
+        ? `${quien} proyecto ${p.name} venció el ${fechaCorta(p.due_date)}, revisalo`
+        : dias === 0
+          ? `${quien} proyecto ${p.name} vence hoy, revisalo`
+          : `${quien} proyecto ${p.name} está pronto a vencer, revisalo`,
+      fecha: p.due_date,
+    }));
+}

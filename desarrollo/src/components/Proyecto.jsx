@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useProyecto } from "../lib/datos.js";
-import { COLORES, filtrarTareas, POR_ESTADO_SIN, posicionAlFinal, progreso } from "../lib/logica.js";
+import { COLORES, diasHasta, fechaCorta, filtrarTareas, POR_ESTADO_SIN, posicionAlFinal, progreso } from "../lib/logica.js";
 import { Confirmar, Desplegable, TextoEditable } from "./ui.jsx";
 import TablaVista from "./TablaVista.jsx";
 import TableroVista from "./TableroVista.jsx";
@@ -55,6 +55,7 @@ export default function Proyecto({ proyecto, perfil, avisar, cambioLocal }) {
         <div className="titulo-proyecto">
           <i className="punto grande" style={{ background: proyecto.color }} />
           <h1><TextoEditable valor={proyecto.name} editable={puedeEditar} max={120} onGuardar={(name) => actualizarProyecto({ name })} /></h1>
+          <VenceProyecto proyecto={proyecto} editable={puedeEditar} guardar={actualizarProyecto} />
           <EstadoGuardado />
           <div className="empuje" />
           <button className="boton" onClick={() => setDialogo("miembros")}>👥 Equipo ({d.project_members.length})</button>
@@ -130,4 +131,26 @@ function EditarProyecto({ proyecto, guardar, onClose }) {
         <textarea className="ancho" rows={3} maxLength={2000} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Descripción del proyecto" />
       </span>} />
   );
+}
+
+// Fecha de vencimiento del proyecto: se muestra y edita en el encabezado
+function VenceProyecto({ proyecto, editable, guardar }) {
+  const [editando, setEditando] = useState(false);
+  const dias = proyecto.due_date ? diasHasta(proyecto.due_date) : null;
+  const estado = dias === null ? "" : dias < 0 ? "vencido" : dias <= 1 ? "pronto" : "";
+  if (editable && (editando || !proyecto.due_date)) {
+    if (!editando) return <button className="boton chip-vence" onClick={() => setEditando(true)}>+ Fecha de vencimiento</button>;
+    return (
+      <label className="chip-vence editando" htmlFor="vence-proyecto">Vence
+        <input id="vence-proyecto" type="date" autoFocus defaultValue={proyecto.due_date ?? ""}
+          onBlur={(e) => { setEditando(false); if (e.target.value !== (proyecto.due_date ?? "")) guardar({ due_date: e.target.value || null }); }}
+          onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") setEditando(false); }} />
+      </label>
+    );
+  }
+  if (!proyecto.due_date) return null;
+  const texto = dias < 0 ? `Venció el ${fechaCorta(proyecto.due_date)}` : dias === 0 ? "Vence hoy" : dias === 1 ? "Vence mañana" : `Vence ${fechaCorta(proyecto.due_date)}`;
+  return editable
+    ? <button className={`chip-vence ${estado}`} onClick={() => setEditando(true)} title="Cambiar fecha de vencimiento">{texto}</button>
+    : <span className={`chip-vence ${estado}`}>{texto}</span>;
 }

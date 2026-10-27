@@ -87,3 +87,34 @@ describe("usuarios y contraseñas", () => {
     expect(traducirError(new TypeError("Failed to fetch"))).toMatch(/Sin conexión/);
   });
 });
+
+import { avisosDeVencimiento, diasHasta } from "./logica.js";
+describe("avisos de vencimiento", () => {
+  const hoy = new Date(2026, 9, 27, 15, 0); // 27 oct 2026, hora local
+  const proyectos = [
+    { id: "a", name: "Pase a producción", due_date: "2026-10-28" },
+    { id: "b", name: "Matriz QA", due_date: "2026-10-27" },
+    { id: "c", name: "Dashboard NPS", due_date: "2026-10-20" },
+    { id: "d", name: "Lejano", due_date: "2026-11-15" },
+    { id: "e", name: "Sin fecha", due_date: null },
+  ];
+  it("cuenta días en hora local", () => {
+    expect(diasHasta("2026-10-28", hoy)).toBe(1);
+    expect(diasHasta("2026-10-27", new Date(2026, 9, 27, 23, 59))).toBe(0);
+  });
+  it("el 27 avisa del proyecto que vence el 28 con el texto pedido", () => {
+    const a = avisosDeVencimiento(proyectos, "Vero", hoy);
+    expect(a.find((x) => x.proyectoId === "a").texto).toBe("Vero, el proyecto Pase a producción está pronto a vencer, revisalo");
+  });
+  it("avisa también si vence hoy o ya venció; no los lejanos ni los sin fecha", () => {
+    const a = avisosDeVencimiento(proyectos, "Vero", hoy);
+    expect(a.map((x) => x.proyectoId)).toEqual(["c", "b", "a"]);
+    expect(a[0].texto).toMatch(/venció el 20 oct/);
+    expect(a[1].texto).toMatch(/vence hoy/);
+  });
+  it("si cambia la fecha, el aviso es nuevo (otro id)", () => {
+    const [x] = avisosDeVencimiento([{ id: "a", name: "P", due_date: "2026-10-28" }], "Vero", hoy);
+    const [y] = avisosDeVencimiento([{ id: "a", name: "P", due_date: "2026-10-27" }], "Vero", hoy);
+    expect(x.id).not.toBe(y.id);
+  });
+});

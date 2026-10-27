@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase, traducirError } from "../lib/supabase.js";
 import { useProyectos } from "../lib/datos.js";
-import { aplicarCambio, COLORES, ordenar, posicionAlFinal } from "../lib/logica.js";
+import { aplicarCambio, COLORES, diasHasta, fechaCorta, ordenar, posicionAlFinal } from "../lib/logica.js";
 import { Avatar, Desplegable, Modal } from "./ui.jsx";
 import { Logo } from "./Login.jsx";
 import Proyecto from "./Proyecto.jsx";
@@ -9,6 +9,7 @@ import AdminUsuarios from "./AdminUsuarios.jsx";
 import CambiarClave from "./CambiarClave.jsx";
 import ActualizarToken from "./ActualizarToken.jsx";
 import { EstadoGuardado } from "./Sistema.jsx";
+import Notificaciones from "./Notificaciones.jsx";
 
 function leerRuta() {
   const h = window.location.hash.replace(/^#\/?/, "");
@@ -46,7 +47,7 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
   return (
     <div className={`espacio ${menuMovil ? "menu-abierto" : ""}`}>
       <aside className="barra-lateral" aria-label="Navegación">
-        <div className="marca"><Logo /><span>Proyectos</span></div>
+        <div className="marca"><Logo /><span>Proyectos</span><span className="empuje" /><Notificaciones perfil={perfil} proyectos={proyectos} alAbrir={(id) => ir(`/p/${id}`)} /></div>
         {escribe && <button className="boton primario ancho" onClick={() => setNuevo(true)}>+ Nuevo proyecto</button>}
         <nav>
           <button className={`nav-item ${ruta.tipo === "inicio" ? "activo" : ""}`} onClick={() => ir("")}>🏠 Inicio</button>
@@ -77,6 +78,7 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
 
       <main className="principal">
         <button className="boton-menu" onClick={() => setMenuMovil(true)} aria-label="Abrir menú">☰</button>
+        <Notificaciones className="campana-movil" perfil={perfil} proyectos={proyectos} alAbrir={(id) => ir(`/p/${id}`)} />
         {ruta.tipo === "usuarios" && perfil.is_admin && <AdminUsuarios perfil={perfil} avisar={avisar} />}
         {ruta.tipo === "proyecto" && actual && <Proyecto key={actual.id} proyecto={actual} perfil={perfil} avisar={avisar} cambioLocal={cambioLocal} />}
         {(ruta.tipo === "inicio" || (ruta.tipo === "usuarios" && !perfil.is_admin)) && (
@@ -104,6 +106,7 @@ function Inicio({ perfil, proyectos, cargando, escribe, onNuevo, ir }) {
           <button key={p.id} className="tarjeta-proyecto" onClick={() => ir(`/p/${p.id}`)} style={{ borderTopColor: p.color }}>
             <strong>{p.name}</strong>
             <span className="tenue">{p.description || "Sin descripción"}</span>
+            {p.due_date && <span className={`vence-tarjeta ${diasHasta(p.due_date) <= 1 ? "pronto" : ""}`}>Vence {fechaCorta(p.due_date)}</span>}
           </button>
         ))}
         {!cargando && escribe && (
@@ -118,13 +121,14 @@ function NuevoProyecto({ proyectos, perfil, avisar, onClose, onCreado }) {
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [color, setColor] = useState(COLORES[0]);
+  const [vence, setVence] = useState("");
   const [enviando, setEnviando] = useState(false);
   const crear = async (e) => {
     e.preventDefault();
     if (!nombre.trim()) return;
     setEnviando(true);
     const { data, error } = await supabase.from("projects")
-      .insert({ name: nombre.trim(), description: descripcion.trim(), color, owner_id: perfil.id, position: posicionAlFinal(proyectos) })
+      .insert({ name: nombre.trim(), description: descripcion.trim(), color, due_date: vence || null, owner_id: perfil.id, position: posicionAlFinal(proyectos) })
       .select().single();
     setEnviando(false);
     if (error) { avisar(traducirError(error), "error"); return; }
@@ -136,6 +140,8 @@ function NuevoProyecto({ proyectos, perfil, avisar, onClose, onCreado }) {
       <form onSubmit={crear}>
         <label className="campo"><span>Nombre</span><input value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={120} autoFocus placeholder="Ej. Q3 Proyecto Alpha" /></label>
         <label className="campo"><span>Descripción (opcional)</span><textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={2000} rows={3} /></label>
+        <label className="campo" htmlFor="np-vence"><span>Fecha de vencimiento</span><input id="np-vence" type="date" value={vence} onChange={(e) => setVence(e.target.value)} />
+          <small className="tenue">Te avisamos en la campanita un día antes.</small></label>
         <div className="campo"><span>Color</span><SelectorColor valor={color} onCambiar={setColor} /></div>
         <div className="acciones">
           <button type="button" className="boton" onClick={onClose}>Cancelar</button>
