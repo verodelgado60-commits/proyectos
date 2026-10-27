@@ -93,10 +93,11 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
 }
 
 function Inicio({ perfil, proyectos, cargando, escribe, onNuevo, ir }) {
-  const nombre = (perfil.full_name || perfil.username).split(" ")[0];
+  // Saludo: el nombre que la persona eligió en Mi cuenta; si no, su primer nombre
+  const nombre = perfil.nickname || (perfil.full_name || perfil.username).split(" ")[0];
   return (
     <section className="inicio">
-      <h1>Hola, {nombre}</h1>
+      <h1>Hola {nombre}</h1>
       <p className="tenue">Todo lo que cambiés se guarda al instante y se ve en vivo en todos tus dispositivos</p>
       <div className="tarjetas">
         {proyectos.map((p) => (
@@ -157,10 +158,11 @@ export function SelectorColor({ valor, onCambiar }) {
 
 function MiCuenta({ perfil, setPerfil, avisar, onClose }) {
   const [nombre, setNombre] = useState(perfil.full_name);
+  const [apodo, setApodo] = useState(perfil.nickname ?? "");
   const [color, setColor] = useState(perfil.avatar_color);
   const [clave, setClave] = useState(false);
   const guardar = async () => {
-    const { data, error } = await supabase.from("profiles").update({ full_name: nombre.trim().slice(0, 80), avatar_color: color }).eq("id", perfil.id).select().single();
+    const { data, error } = await supabase.from("profiles").update({ full_name: nombre.trim().slice(0, 80), nickname: apodo.trim().slice(0, 40), avatar_color: color }).eq("id", perfil.id).select().single();
     if (error) { avisar(traducirError(error), "error"); return; }
     setPerfil(data); avisar("Perfil actualizado"); onClose();
   };
@@ -168,7 +170,8 @@ function MiCuenta({ perfil, setPerfil, avisar, onClose }) {
     <Modal titulo="Mi cuenta" onClose={onClose}>
       {clave ? <CambiarClave perfil={perfil} avisar={avisar} onListo={onClose} onCancelar={() => setClave(false)} /> : (<>
         <div className="fila-perfil"><Avatar perfil={{ ...perfil, full_name: nombre, avatar_color: color }} size={48} /><div><strong>@{perfil.username}</strong><div className="tenue pequeno">El nombre de usuario no se puede cambiar.</div></div></div>
-        <label className="campo"><span>Nombre visible</span><input value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={80} /></label>
+        <label className="campo" htmlFor="mc-nombre"><span>Nombre visible</span><input id="mc-nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={80} /></label>
+        <label className="campo" htmlFor="mc-apodo"><span>¿Cómo querés que te saludemos?</span><input id="mc-apodo" value={apodo} onChange={(e) => setApodo(e.target.value)} maxLength={40} placeholder={(nombre || "").split(" ")[0]} /></label>
         <div className="campo"><span>Color de avatar</span><SelectorColor valor={color} onCambiar={setColor} /></div>
         <div className="acciones">
           <button className="boton" onClick={() => setClave(true)}>Cambiar contraseña</button>

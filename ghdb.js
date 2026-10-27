@@ -635,7 +635,7 @@ export function crearCliente(config, opciones = {}) {
 
   // ---- perfiles: vienen del directorio cifrado de usuarios
   const perfilDe = (d) => ({
-    id: d.id, username: d.usuario, full_name: d.nombre ?? "", avatar_color: d.color ?? "#0780ee",
+    id: d.id, username: d.usuario, full_name: d.nombre ?? "", nickname: d.apodo ?? "", avatar_color: d.color ?? "#0780ee",
     rol: d.rol, is_admin: d.rol === "admin", disabled: d.activo === false, must_change_password: Boolean(d.cambiarClave) && d.rol !== "lector",
     created_at: d.creado,
   });
@@ -727,6 +727,7 @@ export function crearCliente(config, opciones = {}) {
         await modificarUsuarios(async (_a, dir) => {
           for (const d of dir) if (ids.includes(d.id)) {
             if (c.full_name !== undefined) d.nombre = String(c.full_name).slice(0, 80);
+            if (c.nickname !== undefined) d.apodo = String(c.nickname).trim().slice(0, 40);
             if (c.avatar_color !== undefined) d.color = String(c.avatar_color).slice(0, 9);
             if (c.must_change_password === false && d.id === st.sesion.user.id) d.cambiarClave = false;
           }
