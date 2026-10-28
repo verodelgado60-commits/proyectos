@@ -87,10 +87,12 @@ with sync_playwright() as pw:
     check("colores: Listo verde, En curso amarillo, Stopper rojo", [fondo(0), fondo(1), fondo(2)] == ["rgb(29, 205, 159)", "rgb(255, 190, 0)", "rgb(224, 60, 49)"])
     v.locator("select[aria-label='Prioridad']").nth(0).select_option(label="Alta")
     v.locator("select[aria-label='Estimación en horas']").nth(0).select_option(label="4 h")
-    v.locator("tr.fila input[type=date]").nth(0).fill("2026-11-15")
+    v.locator("tr.fila input[aria-label='Fecha límite']").nth(0).fill("2026-11-15")
     import datetime
     hoy = datetime.date.today().strftime("%d/%m/%Y")
-    check("columna Fecha de creación con la fecha de hoy", v.locator(".tabla th:nth-child(4)").first.inner_text() == "Fecha de creación" and v.locator("tr.fila .celda-creada").first.inner_text() == hoy)
+    hoy_iso = datetime.date.today().isoformat()
+    check("columna Fecha de creación con la fecha de hoy", v.locator(".tabla th:nth-child(3)").first.inner_text() == "Fecha de creación" and v.locator(".tabla th:last-child").first.inner_text() == "Estado" and v.locator("tr.fila input[aria-label='Fecha de creación']").first.input_value() == hoy_iso)
+    v.locator("tr.fila input[aria-label='Fecha de creación']").nth(2).fill("2026-09-15")
     check("3 tareas con estados", v.locator("tr.fila").count() == 3)
     v.wait_for_selector("text=Guardado en GitHub", timeout=15000); check("indicador: guardado en GitHub", True)
     check("datos.json en GitHub está cifrado", b"Requisitos" not in control("?archivo=datos.json"))
@@ -113,7 +115,8 @@ with sync_playwright() as pw:
     check("tras recargar: prioridad, estimación y fecha guardadas",
       v.locator("select[aria-label='Prioridad']").nth(0).evaluate("e => e.options[e.selectedIndex].text") == "Alta"
       and v.locator("select[aria-label='Estimación en horas']").nth(0).input_value() == "4"
-      and v.locator("tr.fila input[type=date]").nth(0).input_value() == "2026-11-15")
+      and v.locator("tr.fila input[aria-label='Fecha límite']").nth(0).input_value() == "2026-11-15")
+    check("tras recargar: la fecha de creación editada se guardó", v.locator("tr.fila input[aria-label='Fecha de creación']").nth(2).input_value() == "2026-09-15")
     v.screenshot(path=C + "02b_tabla.png", full_page=True)
     import subprocess
     salida = subprocess.run(["node", "pruebas/proyecto-antiguo.mjs", "VeronicaDelgado1", "Vero-Segura-2026", "Q3 Proyecto Alpha"], capture_output=True, text=True)

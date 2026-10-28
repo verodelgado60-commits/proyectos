@@ -3,11 +3,11 @@ import { COLORES, estaVencida, fechaCorta, ordenar, posicionAlFinal, posicionEnt
 import { Confirmar, Desplegable, ListaEtiqueta, SelectorPersona, TextoEditable } from "./ui.jsx";
 import { AvisoStopper, useStopper } from "./Stopper.jsx";
 
-// Fecha (local) en que se creó la subtarea: dd/mm/aaaa
-const fechaCreacion = (iso) => {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+// Fecha de creación: la que se haya escrito a mano (subtareas viejas) o, si no, el día en que se creó (hora local)
+const fechaCreacion = (t) => {
+  if (t.fecha_creacion) return t.fecha_creacion;
+  const d = t.created_at ? new Date(t.created_at) : null;
+  return !d || Number.isNaN(d.getTime()) ? "" : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 const ESTIMACIONES = [0.5, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 40];
 
@@ -81,11 +81,11 @@ function Grupo({ grupo, tareas, puedeEditar, api, estados, labels, arrastrando, 
               <tr>
                 <th className="col-tarea">Subtarea</th>
                 <th>Responsable</th>
-                <th>Estado</th>
                 <th>Fecha de creación</th>
                 <th>Fecha límite</th>
                 <th>Prioridad</th>
                 <th>Estimación</th>
+                <th>Estado</th>
               </tr>
             </thead>
             <tbody>
@@ -114,8 +114,8 @@ function Grupo({ grupo, tareas, puedeEditar, api, estados, labels, arrastrando, 
                   <td />
                   <td />
                   <td />
-                  <td />
                   <td className="centro tenue pequeno">{sumar(tareas)} · {prog.porcentaje}% listo</td>
+                  <td />
                 </tr>
               </tfoot>
             )}
@@ -178,8 +178,12 @@ function Fila({ numero, tarea, tasks, puedeEditar, api, estados, prioridades, la
         </div>
       </td>
       <td className="centro"><SelectorPersona miembros={project_members} perfiles={perfiles} valor={tarea.assignee_id} editable={puedeEditar} onCambiar={(v) => cambiar({ assignee_id: v })} /></td>
-      <td className="celda-pastilla"><ListaEtiqueta etiqueta="Estado" etiquetas={estados} valor={tarea.status_id} editable={puedeEditar} onCambiar={(v) => cambiar({ status_id: v })} /></td>
-      <td className="centro tenue pequeno celda-creada" title={tarea.created_at ? `Creada el ${new Date(tarea.created_at).toLocaleString("es-CR")}` : undefined}>{fechaCreacion(tarea.created_at)}</td>
+      <td className="centro celda-creada">
+        {puedeEditar
+          ? <input type="date" className="entrada-fecha campo-celda" value={fechaCreacion(tarea)} aria-label="Fecha de creación"
+              onChange={(e) => cambiar({ fecha_creacion: e.target.value || null })} />
+          : <span className="tenue pequeno">{fechaCreacion(tarea) ? fechaCreacion(tarea).split("-").reverse().join("/") : "—"}</span>}
+      </td>
       <td className={`centro ${vencida ? "vencida" : ""}`}>
         {puedeEditar
           ? <input type="date" className="entrada-fecha campo-celda" value={tarea.due_date ?? ""} onChange={(e) => cambiar({ due_date: e.target.value || null })} aria-label="Fecha límite" />
@@ -196,6 +200,7 @@ function Fila({ numero, tarea, tasks, puedeEditar, api, estados, prioridades, la
             </select>
           : <span>{tarea.estimation ?? ""}</span>}
       </td>
+      <td className="celda-pastilla"><ListaEtiqueta etiqueta="Estado" etiquetas={estados} valor={tarea.status_id} editable={puedeEditar} onCambiar={(v) => cambiar({ status_id: v })} /></td>
     </tr>
     {expandida && subs.map((s, i) => <Fila key={s.id} numero={`${numero}${i + 1}`} tarea={s} esSub {...comunes} />)}
     {expandida && puedeEditar && (
