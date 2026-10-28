@@ -144,6 +144,36 @@ with sync_playwright() as pw:
     v.click("button.nav-carpeta:has-text('Sin proyecto')"); v.wait_for_selector(".vista-carpeta")
     check("eliminar proyecto conservando tareas: pasan a Sin proyecto", v.locator(".vista-carpeta .tarjeta-proyecto:has-text('Se conserva')").count() == 1 and v.locator("text=Para borrar").count() == 0)
     v.click(".vista-carpeta .tarjeta-proyecto:has-text('Se conserva')"); v.wait_for_selector("text=Guardado en GitHub", timeout=15000)
+    print("Importar de Excel")
+    excel = os.environ.get("EXCEL_PRUEBA")
+    if not excel:
+        import openpyxl, datetime
+        wb = openpyxl.Workbook(); ws = wb.active
+        for fila in [["Tablero de prueba"], ["Pendientes"], ["Nombre", "Estado", "Vencimiento", "Prioridad", "Notas", "Menú desplegable"],
+                     ["Flujo bienvenida", "En curso", datetime.datetime(2026, 11, 20), "Alta", "Revisar textos", "Flujo enviado"],
+                     ["Token de llamadas", "No iniciado", datetime.datetime(2026, 11, 30), "Baja", "", ""],
+                     ["Ya cerrado", "Listo", datetime.datetime(2026, 10, 1), "Media", "", ""]]:
+            ws.append(fila)
+        excel = "/var/tmp/gh-capturas/prueba.xlsx"; wb.save(excel)
+    v.click("button.nav-carpeta:has-text('IA')"); v.wait_for_selector(".vista-carpeta h1:has-text('IA')")
+    antes = v.locator(".vista-carpeta .tarjeta-proyecto").count() - 1
+    v.click("button:has-text('Importar de Excel')"); v.set_input_files(".modal input[type=file]", excel)
+    v.wait_for_selector(".lista-import li")
+    marcadas = [l.locator(".nombre-import").inner_text() for l in v.locator(".lista-import li").all() if l.locator("input").is_checked()]
+    estados = [l.locator(".estado-import").inner_text() for l in v.locator(".lista-import li").all() if l.locator("input").is_checked()]
+    print("    marcadas:", marcadas)
+    check("marca por defecto solo En curso y No iniciado", len(marcadas) > 0 and set(estados) <= {"En curso", "No iniciado"})
+    v.screenshot(path=C + "02d_importar.png")
+    v.click(".modal button:has-text('Importar')")
+    v.wait_for_selector(".modal", state="detached", timeout=60000)
+    despues = v.locator(".vista-carpeta .tarjeta-proyecto").count() - 1
+    check(f"se crearon {len(marcadas)} tareas en IA", despues - antes == len(marcadas))
+    primera = marcadas[0]; est0 = estados[0]
+    v.click(f".vista-carpeta .tarjeta-proyecto:has-text('{primera}')"); v.wait_for_selector("tr.fila")
+    est = v.locator("select[aria-label='Estado']").first.evaluate("e => e.options[e.selectedIndex].text")
+    check("la subtarea 1 trae estado, fecha y notas", est == ("Pendiente" if est0 == "No iniciado" else est0) and v.locator("tr.fila input[type=date]").first.input_value() != "")
+    v.wait_for_selector("text=Guardado en GitHub", timeout=20000)
+    v.screenshot(path=C + "02e_importada.png", full_page=True)
     print("Usuarios y permisos")
     v.click("button.nav-item:has-text('Usuarios y permisos')"); v.wait_for_selector("h1:has-text('Usuarios y permisos')")
     claves = {}
