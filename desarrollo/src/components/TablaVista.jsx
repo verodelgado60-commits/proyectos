@@ -103,7 +103,7 @@ function Grupo({ grupo, tareas, puedeEditar, api, estados, labels, arrastrando, 
                 <tr>
                   <td className="col-tarea" />
                   <td />
-                  <td><BarraEstados tareas={tareas} estados={estados} /></td>
+                  <td />
                   <td />
                   <td />
                   <td className="centro tenue pequeno">{sumar(tareas)} · {prog.porcentaje}% listo</td>
