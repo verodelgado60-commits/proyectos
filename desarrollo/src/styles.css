@@ -167,8 +167,8 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .nombre-grupo { color: var(--color-grupo); font-size: 18px; min-width: 0; }
 .plegar { color: var(--color-grupo); font-size: 14px; }
 .tabla-desplazable { overflow-x: auto; border-radius: var(--radio); }
-.tabla { border-collapse: separate; border-spacing: 0 1px; width: 100%; min-width: 1010px; table-layout: fixed; }
-.tabla th:nth-child(2) { width: 110px; } .tabla th:nth-child(3), .tabla th:nth-child(4), .tabla th:nth-child(5), .tabla th:nth-child(7) { width: 150px; } .tabla th:nth-child(6) { width: 110px; }
+.tabla { border-collapse: separate; border-spacing: 0 1px; width: 100%; min-width: 1000px; table-layout: fixed; }
+.tabla th:nth-child(2) { width: 100px; } .tabla th:nth-child(3) { width: 140px; } .tabla th:nth-child(4) { width: 172px; } .tabla th:nth-child(5), .tabla th:nth-child(7) { width: 136px; } .tabla th:nth-child(6) { width: 92px; }
 .celda-creada { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tabla th { font-weight: 500; color: var(--tenue); font-size: 13px; padding: 6px 8px; text-align: center; white-space: nowrap; background: var(--fondo); }
 .tabla th.col-tarea { text-align: left; }
@@ -480,3 +480,24 @@ button.chip-vence { cursor: pointer; }
 
 .vista-carpeta .titulo-carpeta { flex-wrap: wrap; }
 .cabecera-proyecto .descripcion { white-space: pre-line; overflow-wrap: anywhere; }
+
+/* Fecha límite N/A */
+.fecha-con-na { display: inline-flex; align-items: center; gap: 4px; }
+.fecha-con-na .entrada-fecha.campo-celda { width: 128px; }
+.boton-na { border: 1px solid var(--borde); background: var(--superficie); color: var(--tenue); border-radius: 6px; font-size: 11px; font-weight: 700; padding: 5px 6px; cursor: pointer; }
+.boton-na:hover { border-color: var(--primario); color: var(--primario); }
+.chip-na { display: inline-block; min-width: 64px; border: 1px dashed var(--borde); background: var(--hover); color: var(--tenue); border-radius: 999px; font-size: 12px; font-weight: 700; padding: 4px 12px; }
+button.chip-na { cursor: pointer; }
+button.chip-na:hover:not(:disabled) { border-color: var(--primario); color: var(--primario); }
+
+/* Conclusión */
+.icono-conclusion { flex: none; border: 0; background: transparent; padding: 2px 4px; border-radius: 4px; opacity: 0; font-size: 14px; cursor: pointer; }
+.icono-conclusion.con-nota { opacity: 1; }
+.fila:hover .icono-conclusion, .icono-conclusion:focus-visible { opacity: 1; }
+.form-conclusion textarea { width: 100%; min-height: 110px; resize: vertical; margin: 8px 0 4px; }
+.aviso-conclusion { border-left: 4px solid #1dcd9f; background: color-mix(in srgb, #1dcd9f 10%, var(--superficie)); border-radius: 8px; padding: 10px 12px; margin: 4px 0 14px; }
+.aviso-conclusion p { margin: 4px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.agregar-conclusion { display: inline-block; margin: 0 0 12px; }
+.celda-creada .entrada-fecha.campo-celda { width: 128px; }
+.lista-estimacion { width: 76px; }
+.tabla tfoot td { white-space: nowrap; overflow: visible; }

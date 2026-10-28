@@ -4,6 +4,7 @@ import { useComentarios } from "../lib/datos.js";
 import { hace, posicionAlFinal, subtareasDe } from "../lib/logica.js";
 import { Avatar, CeldaEtiqueta, Confirmar, SelectorPersona, TextoEditable } from "./ui.jsx";
 import { AvisoStopper, useStopper } from "./Stopper.jsx";
+import { BloqueConclusion, useConclusion } from "./Conclusion.jsx";
 
 export default function PanelTarea({ tarea, tasks, groups, estados, prioridades, labels, project_members, perfiles, puedeEditar, esDueno, perfil, api, abrir, avisar, onClose }) {
   const [descripcion, setDescripcion] = useState(tarea.description ?? "");
@@ -13,6 +14,7 @@ export default function PanelTarea({ tarea, tasks, groups, estados, prioridades,
   const subs = tarea.parent_id ? [] : subtareasDe(tasks, tarea.id);
   const listo = labels.find((l) => l.kind === "status" && l.is_done);
   const stopper = useStopper(estados, api.actualizarTarea);
+  const conclusion = useConclusion(api.actualizarTarea);
   const cambiar = (c) => stopper.cambiar(tarea, c);
 
   const refDesc = useRef(null);
@@ -45,6 +47,8 @@ export default function PanelTarea({ tarea, tasks, groups, estados, prioridades,
 
         <AvisoStopper tarea={tarea} estados={estados} onEditar={puedeEditar ? () => stopper.editar(tarea) : undefined} />
         {stopper.dialogo}
+        {conclusion.dialogo}
+        <BloqueConclusion tarea={tarea} editable={puedeEditar} onEditar={() => conclusion.abrir(tarea)} />
         <dl className="campos-tarea">
           <dt>Estado</dt><dd><CeldaEtiqueta etiquetas={estados} valor={tarea.status_id} editable={puedeEditar} onCambiar={(v) => cambiar({ status_id: v })} /></dd>
           <dt>Prioridad</dt><dd><CeldaEtiqueta etiquetas={prioridades} valor={tarea.priority_id} editable={puedeEditar} onCambiar={(v) => cambiar({ priority_id: v })} /></dd>
@@ -54,8 +58,11 @@ export default function PanelTarea({ tarea, tasks, groups, estados, prioridades,
           </dd>
           <dt>Inicio</dt><dd><input type="date" disabled={!puedeEditar} value={tarea.start_date ?? ""} max={tarea.due_date ?? undefined}
             onChange={(e) => cambiar({ start_date: e.target.value || null })} aria-label="Fecha de inicio" /></dd>
-          <dt>Fecha límite</dt><dd><input type="date" disabled={!puedeEditar} value={tarea.due_date ?? ""} min={tarea.start_date ?? undefined}
-            onChange={(e) => cambiar({ due_date: e.target.value || null })} aria-label="Fecha límite" /></dd>
+          <dt>Fecha límite</dt><dd>{tarea.fecha_na
+            ? <button type="button" className="chip-na" disabled={!puedeEditar} onClick={() => cambiar({ fecha_na: false })}>N/A</button>
+            : <span className="fecha-con-na"><input type="date" disabled={!puedeEditar} value={tarea.due_date ?? ""} min={tarea.start_date ?? undefined}
+              onChange={(e) => cambiar({ due_date: e.target.value || null })} aria-label="Fecha límite" />
+              {puedeEditar && !tarea.due_date && <button type="button" className="boton-na" onClick={() => cambiar({ fecha_na: true, due_date: null })}>N/A</button>}</span>}</dd>
           <dt>Estimación</dt><dd><input type="number" min="0" step="0.5" disabled={!puedeEditar} value={tarea.estimation ?? ""}
             onChange={(e) => cambiar({ estimation: e.target.value === "" ? null : Math.max(0, Number(e.target.value)) })} aria-label="Estimación" /></dd>
           {!tarea.parent_id && <><dt>Sección</dt><dd><select disabled={!puedeEditar} value={tarea.group_id ?? ""} onChange={(e) => cambiar({ group_id: e.target.value })}>

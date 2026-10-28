@@ -2,6 +2,7 @@ import { useState } from "react";
 import { COLORES, estaVencida, fechaCorta, ordenar, posicionAlFinal, posicionEntre, progreso, resumenEstados, subtareasDe } from "../lib/logica.js";
 import { Confirmar, Desplegable, ListaEtiqueta, SelectorPersona, TextoEditable } from "./ui.jsx";
 import { AvisoStopper, useStopper } from "./Stopper.jsx";
+import { useConclusion } from "./Conclusion.jsx";
 
 // Fecha de creación: la que se haya escrito a mano (subtareas viejas) o, si no, el día en que se creó (hora local)
 const fechaCreacion = (t) => {
@@ -35,12 +36,14 @@ function Grupo({ grupo, tareas, puedeEditar, api, estados, labels, arrastrando, 
   const [sobre, setSobre] = useState(false);
   const prog = progreso(tareas, labels);
 
-  const agregar = async (e) => {
+  const conclusionNueva = useConclusion(api.actualizarTarea);
+  const agregar = async (e, conConclusion = false) => {
     e.preventDefault();
     const titulo = nueva.trim();
     if (!titulo) return;
     setNueva("");
-    await api.crearTarea({ title: titulo, group_id: grupo.id, position: posicionAlFinal(tareas), status_id: estados[0]?.id ?? null });
+    const creada = await api.crearTarea({ title: titulo, group_id: grupo.id, position: posicionAlFinal(tareas), status_id: estados[0]?.id ?? null });
+    if (conConclusion && creada && creada !== true) conclusionNueva.abrir(creada);
   };
 
   // Soltar una tarea arrastrada: antes de "destino" o al final del grupo
@@ -100,7 +103,9 @@ function Grupo({ grupo, tareas, puedeEditar, api, estados, labels, arrastrando, 
                   <td className="col-tarea" colSpan={7}>
                     <form onSubmit={agregar} className="form-agregar">
                       <button type="submit" className="boton-mas" aria-label="Agregar subtarea" title="Agregar subtarea">+</button>
-                      <input className="entrada-nueva" placeholder={`${tareas.length + 1}. Escribí la subtarea y presioná Enter`} value={nueva} onChange={(e) => setNueva(e.target.value)} maxLength={300} aria-label={`Agregar subtarea a ${grupo.name}`} />
+                      <input className="entrada-nueva" placeholder={`${tareas.length + 1}. Escribí la subtarea y presioná Enter`} value={nueva} onChange={(e) => setNueva(e.target.value)} maxLength={300} aria-label={`Agregar subtarea a ${grupo.name}`}
+                        onKeyDown={(e) => { if (e.key === "Enter" && e.shiftKey) agregar(e, true); }} title="Enter: agregar · Shift + Enter: agregar y escribir la conclusión" />
+                      {conclusionNueva.dialogo}
                     </form>
                   </td>
                 </tr>
@@ -150,7 +155,13 @@ function Fila({ numero, tarea, tasks, puedeEditar, api, estados, prioridades, la
   const hechas = subs.filter((s) => labels.some((l) => l.id === s.status_id && l.is_done)).length;
   const vencida = estaVencida(tarea, labels);
   const stopper = useStopper(estados, api.actualizarTarea);
+  const conclusion = useConclusion(api.actualizarTarea);
   const cambiar = (c) => stopper.cambiar(tarea, c);
+  // Shift + Enter en cualquier parte de la fila (menos en las listas) abre la conclusión
+  const teclaFila = (e) => {
+    if (e.key !== "Enter" || !e.shiftKey || !puedeEditar || e.target.tagName === "SELECT") return;
+    e.preventDefault(); e.stopPropagation(); setTimeout(() => conclusion.abrir(tarea), 0);
+  };
   const comunes = { tasks, puedeEditar, api, estados, prioridades, labels, project_members, perfiles, abrir };
 
   const agregarSub = async (e) => {
@@ -161,7 +172,7 @@ function Fila({ numero, tarea, tasks, puedeEditar, api, estados, prioridades, la
   };
 
   return (<>
-    <tr className={`fila ${esSub ? "fila-sub" : ""} ${sobre ? "sobre" : ""}`}
+    <tr className={`fila ${esSub ? "fila-sub" : ""} ${sobre ? "sobre" : ""}`} onKeyDownCapture={teclaFila}
       draggable={arrastrable && !esSub} onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", tarea.id); onArrastre?.(); }}
       onDragEnd={onFinArrastre} onDragOver={(e) => { if (onSoltar) { e.preventDefault(); setSobre(true); } }} onDragLeave={() => setSobre(false)}
       onDrop={(e) => { e.preventDefault(); setSobre(false); onSoltar?.(); }}>
@@ -174,6 +185,12 @@ function Fila({ numero, tarea, tasks, puedeEditar, api, estados, prioridades, la
           <TextoEditable className="titulo-tarea" valor={tarea.title} editable={puedeEditar} onGuardar={(title) => cambiar({ title })} />
           <AvisoStopper tarea={tarea} estados={estados} compacto onEditar={() => (puedeEditar ? stopper.editar(tarea) : abrir(tarea.id))} />
           {stopper.dialogo}
+          {conclusion.dialogo}
+          {(tarea.conclusion || puedeEditar) && (
+            <button className={`icono-conclusion ${tarea.conclusion ? "con-nota" : ""}`} onClick={() => conclusion.abrir(tarea)}
+              aria-label={tarea.conclusion ? `Conclusión: ${tarea.conclusion}` : "Agregar conclusión"}
+              title={tarea.conclusion ? `Conclusión: ${tarea.conclusion}` : "Agregar conclusión (Shift + Enter)"}>📝</button>
+          )}
           <button className="abrir" onClick={() => abrir(tarea.id)} aria-label={`Abrir ${tarea.title}`} title="Abrir detalle y comentarios">💬</button>
         </div>
       </td>
@@ -185,9 +202,16 @@ function Fila({ numero, tarea, tasks, puedeEditar, api, estados, prioridades, la
           : <span className="tenue pequeno">{fechaCreacion(tarea) ? fechaCreacion(tarea).split("-").reverse().join("/") : "—"}</span>}
       </td>
       <td className={`centro ${vencida ? "vencida" : ""}`}>
-        {puedeEditar
-          ? <input type="date" className="entrada-fecha campo-celda" value={tarea.due_date ?? ""} onChange={(e) => cambiar({ due_date: e.target.value || null })} aria-label="Fecha límite" />
-          : <span>{fechaCorta(tarea.due_date)}</span>}
+        {tarea.fecha_na
+          ? (puedeEditar
+            ? <button type="button" className="chip-na" onClick={() => cambiar({ fecha_na: false })} title="Volver a poner una fecha" aria-label="Fecha límite: N/A (cambiar)">N/A</button>
+            : <span className="chip-na">N/A</span>)
+          : puedeEditar
+            ? <span className="fecha-con-na">
+                <input type="date" className="entrada-fecha campo-celda" value={tarea.due_date ?? ""} onChange={(e) => cambiar({ due_date: e.target.value || null })} aria-label="Fecha límite" />
+                {!tarea.due_date && <button type="button" className="boton-na" onClick={() => cambiar({ fecha_na: true, due_date: null })} title="No aplica fecha límite" aria-label="Marcar fecha límite como N/A">N/A</button>}
+              </span>
+            : <span>{fechaCorta(tarea.due_date)}</span>}
       </td>
       <td className="celda-pastilla"><ListaEtiqueta etiqueta="Prioridad" etiquetas={prioridades} valor={tarea.priority_id} editable={puedeEditar} onCambiar={(v) => cambiar({ priority_id: v })} /></td>
       <td className="centro">

@@ -85,6 +85,18 @@ with sync_playwright() as pw:
     fondo = lambda i: v.locator("select[aria-label='Estado']").nth(i).locator("..").evaluate("e => getComputedStyle(e).backgroundColor")
     v.wait_for_timeout(800)
     check("colores: Listo verde, En curso amarillo, Stopper rojo", [fondo(0), fondo(1), fondo(2)] == ["rgb(29, 205, 159)", "rgb(255, 190, 0)", "rgb(224, 60, 49)"])
+    # Fecha límite N/A
+    v.locator("tr.fila").nth(1).locator("button.boton-na").click()
+    v.wait_for_selector("tr.fila >> nth=1 >> .chip-na"); check("fecha límite N/A en la subtarea 2", v.locator("tr.fila").nth(1).locator(".chip-na").inner_text() == "N/A")
+    # Conclusión con Shift + Enter
+    v.locator("tr.fila").nth(0).locator(".titulo-tarea").focus(); v.keyboard.press("Shift+Enter")
+    v.wait_for_selector(".modal >> text=Conclusión"); check("Shift + Enter en una subtarea abre la conclusión", True)
+    v.fill(".modal textarea", "Quedó aprobado por el cliente"); v.click(".modal button:has-text('Guardar conclusión')")
+    v.wait_for_selector("tr.fila >> nth=0 >> .icono-conclusion.con-nota")
+    check("la conclusión queda marcada en la fila", "Quedó aprobado" in v.locator("tr.fila").nth(0).locator(".icono-conclusion").get_attribute("title"))
+    v.fill("input[aria-label^='Agregar subtarea a']", "Llamar a proveedor"); v.keyboard.press("Shift+Enter")
+    v.wait_for_selector(".modal >> text=Llamar a proveedor"); check("Shift + Enter al agregar crea la subtarea y abre su conclusión", v.locator("tr.fila:has-text('Llamar a proveedor')").count() == 1)
+    v.click(".modal button:has-text('Cancelar')")
     v.locator("select[aria-label='Prioridad']").nth(0).select_option(label="Alta")
     v.locator("select[aria-label='Estimación en horas']").nth(0).select_option(label="4 h")
     v.locator("tr.fila input[aria-label='Fecha límite']").nth(0).fill("2026-11-15")
@@ -93,7 +105,7 @@ with sync_playwright() as pw:
     hoy_iso = datetime.date.today().isoformat()
     check("columna Fecha de creación con la fecha de hoy", v.locator(".tabla th:nth-child(3)").first.inner_text() == "Fecha de creación" and v.locator(".tabla th:last-child").first.inner_text() == "Estado" and v.locator("tr.fila input[aria-label='Fecha de creación']").first.input_value() == hoy_iso)
     v.locator("tr.fila input[aria-label='Fecha de creación']").nth(2).fill("2026-09-15")
-    check("3 tareas con estados", v.locator("tr.fila").count() == 3)
+    check("4 subtareas", v.locator("tr.fila").count() == 4)
     v.wait_for_selector("text=Guardado en GitHub", timeout=15000); check("indicador: guardado en GitHub", True)
     check("datos.json en GitHub está cifrado", b"Requisitos" not in control("?archivo=datos.json"))
     fila(0).locator("button.abrir").click(); v.wait_for_selector(".panel-tarea")
@@ -116,6 +128,7 @@ with sync_playwright() as pw:
       v.locator("select[aria-label='Prioridad']").nth(0).evaluate("e => e.options[e.selectedIndex].text") == "Alta"
       and v.locator("select[aria-label='Estimación en horas']").nth(0).input_value() == "4"
       and v.locator("tr.fila input[aria-label='Fecha límite']").nth(0).input_value() == "2026-11-15")
+    check("tras recargar: N/A y conclusión guardadas", v.locator("tr.fila").nth(1).locator(".chip-na").count() == 1 and v.locator("tr.fila").nth(0).locator(".icono-conclusion.con-nota").count() == 1)
     check("tras recargar: la fecha de creación editada se guardó", v.locator("tr.fila input[aria-label='Fecha de creación']").nth(2).input_value() == "2026-09-15")
     v.screenshot(path=C + "02b_tabla.png", full_page=True)
     import subprocess
@@ -131,7 +144,7 @@ with sync_playwright() as pw:
     v.wait_for_selector("text=Guardado en GitHub", timeout=15000)
     v.wait_for_selector("text=Guardado en GitHub", timeout=15000)
     v.reload(); v.wait_for_selector("text=Requisitos", timeout=15000)
-    check("recarga: la sesión sigue y los datos están", v.locator("tr.fila").count() == 3)
+    check("recarga: la sesión sigue y los datos están", v.locator("tr.fila").count() == 4)
     v.screenshot(path=C + "03_tabla.png", full_page=True)
 
     print("Eliminar proyectos")
