@@ -47,21 +47,28 @@ export function useCarpetas(usuarioId, avisar) {
 }
 
 // ---------- Responsables sin cuenta (Tif, Fer, David…) ----------
-const INICIALES = [["Tif", "#a63be3"], ["Fer", "#ff7c00"], ["David", "#1dcd9f"]];
+// Cada tanda se agrega una sola vez (queda anotada en "ajustes"); si después se borra a alguien, no vuelve a aparecer
+const TANDAS = [
+  ["responsables-iniciales", [["Tif", "#a63be3"], ["Fer", "#ff7c00"], ["David", "#1dcd9f"]]],
+  ["responsables-isoft", [["Isoft", "#003ff9"]]],
+];
 export function useResponsables(puedeEscribir, avisar) {
   const [responsables, setResponsables] = useState([]);
   const cargar = useCallback(async () => {
     const { data, error } = await supabase.from("responsables").select("*").order("created_at");
     if (error) { avisar?.(traducirError(error), "error"); return; }
     setResponsables(data);
-    // La primera vez se agregan Tif, Fer y David (si después se borran, no vuelven a aparecer)
-    if (puedeEscribir && !data.length) {
-      const { data: hecho } = await supabase.from("ajustes").select("*").eq("id", "responsables-iniciales");
-      if (!hecho?.length) {
-        await supabase.from("ajustes").insert({ id: "responsables-iniciales", valor: true });
-        const { data: nuevos } = await supabase.from("responsables").insert(INICIALES.map(([name, avatar_color]) => ({ name, avatar_color }))).select();
-        if (nuevos) setResponsables(nuevos);
-      }
+    if (!puedeEscribir) return;
+    const { data: hechos } = await supabase.from("ajustes").select("id");
+    const listos = new Set((hechos ?? []).map((x) => x.id));
+    let lista = data;
+    for (const [id, personas] of TANDAS) {
+      if (listos.has(id)) continue;
+      await supabase.from("ajustes").insert({ id, valor: true });
+      const faltan = personas.filter(([n]) => !lista.some((r) => r.name.toLowerCase() === n.toLowerCase()));
+      if (!faltan.length) continue;
+      const { data: nuevos } = await supabase.from("responsables").insert(faltan.map(([name, avatar_color]) => ({ name, avatar_color }))).select();
+      if (nuevos) { lista = [...lista, ...nuevos]; setResponsables(lista); }
     }
   }, [puedeEscribir, avisar]);
   useEffect(() => {
