@@ -127,23 +127,26 @@ export function diasHasta(iso, hoy = new Date()) {
   const [hy, hm, hd] = fechaLocal(hoy).split("-").map(Number);
   return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(hy, hm - 1, hd)) / 86400000);
 }
-// Proyectos que vencen mañana u hoy, o que ya vencieron (hasta 30 días atrás)
-export function avisosDeVencimiento(proyectos, nombre, hoy = new Date()) {
-  const quien = nombre ? `${nombre}, el` : "El";
-  return proyectos
+// Tareas que vencen mañana u hoy, o que ya vencieron (hasta 30 días atrás)
+export function avisosDeVencimiento(tareas, nombre, hoy = new Date(), carpetas = {}) {
+  const quien = nombre ? `${nombre}, la` : "La";
+  return tareas
     .filter((p) => p.due_date)
     .map((p) => ({ p, dias: diasHasta(p.due_date, hoy) }))
     .filter(({ dias }) => dias <= 1 && dias >= -30)
     .sort((a, b) => a.dias - b.dias)
-    .map(({ p, dias }) => ({
+    .map(({ p, dias }) => {
+      const de = carpetas[p.carpeta_id] ? ` del proyecto ${carpetas[p.carpeta_id].name}` : "";
+      return {
       id: `${p.id}:${p.due_date}:${dias < 0 ? "vencido" : dias === 0 ? "hoy" : "pronto"}`,
       proyectoId: p.id,
       tipo: dias < 0 ? "vencido" : dias === 0 ? "hoy" : "pronto",
       texto: dias < 0
-        ? `${quien} proyecto ${p.name} venció el ${fechaCorta(p.due_date)}, revisalo`
+        ? `${quien} tarea ${p.name}${de} venció el ${fechaCorta(p.due_date)}, revisala`
         : dias === 0
-          ? `${quien} proyecto ${p.name} vence hoy, revisalo`
-          : `${quien} proyecto ${p.name} está pronto a vencer, revisalo`,
+          ? `${quien} tarea ${p.name}${de} vence hoy, revisala`
+          : `${quien} tarea ${p.name}${de} está pronta a vencer, revisala`,
       fecha: p.due_date,
-    }));
+      };
+    });
 }

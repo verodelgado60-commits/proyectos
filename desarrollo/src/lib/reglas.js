@@ -22,6 +22,7 @@ function rolEnProyecto(ctx, projectId) {
   const m = (ctx.tablas.project_members ?? []).find((x) => x.project_id === projectId && x.user_id === ctx.sesion?.user.id);
   return m?.role ?? null;
 }
+const escribeGlobal = (ctx) => ["admin", "editor"].includes(ctx.sesion?.rol);
 const puedeEditar = (ctx, pid) => ["owner", "editor"].includes(rolEnProyecto(ctx, pid));
 const esMiembro = (ctx, pid) => rolEnProyecto(ctx, pid) !== null;
 const proyectoDe = (ctx, tabla, fila) => (tabla === "projects" ? fila.id : fila.project_id);
@@ -35,6 +36,12 @@ export const reglas = {
 
   insertar(tabla, fila, ctx) {
     const yo = ctx.sesion.user.id;
+    // Proyectos (carpetas) que agrupan tareas: IA, IVR, Pre2post…
+    if (tabla === "carpetas") {
+      if (!escribeGlobal(ctx)) error("No tenés permiso para crear proyectos.");
+      if (!fila.name?.trim()) error("El proyecto necesita un nombre.");
+      return { color: "#0780ee", position: 0, ...fila, name: fila.name.trim(), created_by: yo, created_at: ahora() };
+    }
     if (tabla === "projects") {
       const p = { description: "", color: "#0780ee", position: 0, esquema: ESQUEMA, ...fila, owner_id: yo, created_at: ahora(), updated_at: ahora() };
       if (!p.name?.trim()) error("El proyecto necesita un nombre.");
@@ -74,6 +81,12 @@ export const reglas = {
   },
 
   actualizar(tabla, fila, cambios, ctx) {
+    if (tabla === "carpetas") {
+      if (!escribeGlobal(ctx)) error("No tenés permiso para editar proyectos.");
+      const c = { ...cambios }; delete c.id; delete c.created_by; delete c.created_at;
+      if ("name" in c && !String(c.name).trim()) error("El proyecto necesita un nombre.");
+      return c;
+    }
     if (tabla === "project_members") {
       if (rolEnProyecto(ctx, fila.project_id) !== "owner") error("Solo quien es dueño del proyecto administra el equipo.");
       if (cambios.role === "owner" || fila.role === "owner") error("No se puede cambiar el rol del dueño.");
@@ -97,6 +110,12 @@ export const reglas = {
 
   borrar(tabla, fila, ctx) {
     const tareas = ctx.tablas.tasks ?? [];
+    if (tabla === "carpetas") {
+      if (!escribeGlobal(ctx)) error("No tenés permiso para eliminar proyectos.");
+      // Sus tareas no se borran: quedan en "Sin proyecto"
+      ctx.extra.push({ t: "update", tabla: "projects", filtros: [["carpeta_id", "eq", fila.id]], cambios: { carpeta_id: null } });
+      return;
+    }
     const adjuntosDe = (ids) => (ctx.tablas.adjuntos ?? []).filter((a) => ids.includes(a.task_id));
     const cascadaTareas = (ids) => {
       for (const a of adjuntosDe(ids)) ctx.archivos.push(a.ruta);

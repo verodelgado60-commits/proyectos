@@ -25,6 +25,11 @@ def entrar(p, usuario, clave):
     p.goto(SITIO); p.wait_for_selector("text=Iniciar sesión")
     p.fill("input[autocomplete=username]", usuario); p.fill("input[type=password]", clave); p.click("button:has-text('Entrar')")
 
+def abrir_tarea(p, nombre="Q3 Proyecto Alpha", carpeta="IA"):
+    if p.locator(f"button.nav-tarea:has-text('{nombre}')").count() == 0:
+        p.click(f"button.nav-carpeta:has-text('{carpeta}')")
+    p.click(f"button.nav-tarea:has-text('{nombre}')")
+
 def crear_clave(p, nueva):
     p.wait_for_selector("text=Creá tu contraseña")
     pw = p.locator("input[type=password]"); pw.nth(0).fill(nueva); pw.nth(1).fill(nueva); p.click("button:has-text('Guardar contraseña')")
@@ -48,8 +53,16 @@ with sync_playwright() as pw:
     check("el token quedó cifrado (no aparece en usuarios.json)", TOKEN.encode() not in control("?archivo=usuarios.json"))
 
     print("Proyecto, tareas, comentarios y adjuntos")
-    v.click("text=+ Nuevo proyecto"); v.locator(".modal input").first.fill("Q3 Proyecto Alpha"); v.click(".modal button:has-text('Crear proyecto')")
+    v.click("text=+ Nuevo proyecto"); v.fill("#nc-nombre", "IA"); v.click(".modal button:has-text('Crear proyecto')")
+    v.wait_for_selector(".vista-carpeta h1:has-text('IA')"); check("proyecto IA creado y abierto", True)
+    check("el proyecto se despliega en el menú con «+ Crear tarea»", v.locator(".subnav button:has-text('+ Crear tarea')").count() == 1)
+    v.click(".vista-carpeta button:has-text('+ Crear tarea')"); v.fill("#nt-nombre", "Q3 Proyecto Alpha")
+    check("la tarea nueva queda en el proyecto IA", v.locator("#nt-carpeta option:checked").inner_text() == "IA")
+    v.click(".modal button:has-text('Crear tarea')")
     v.wait_for_selector("h1:has-text('Q3 Proyecto Alpha')")
+    check("la tarea aparece debajo de IA en el menú", v.locator(".subnav button.nav-tarea:has-text('Q3 Proyecto Alpha')").count() == 1)
+    check("migas: volver a IA", v.locator(".migas-proyecto a").inner_text() == "← IA")
+    v.screenshot(path=C + "01b_carpeta_menu.png")
     for t in ["Requisitos", "Criterios de éxito", "Presupuesto"]:
         v.fill("input[aria-label^='Agregar subtarea a']", t); v.keyboard.press("Enter"); v.wait_for_selector(f"text={t}")
     fila = lambda i: v.locator("tr.fila").nth(i)
@@ -125,7 +138,7 @@ with sync_playwright() as pw:
         v.wait_for_selector(f".lista-usuarios >> text={nombre}")
     check("crea editora y lector con clave temporal", len(claves) == 2)
     v.screenshot(path=C + "04_usuarios.png")
-    v.click("button.nav-item:has-text('Q3 Proyecto Alpha')"); v.click("button:has-text('Equipo')")
+    abrir_tarea(v); v.click("button:has-text('Equipo')")
     for usuario, rol in [("ana.mora", "editor"), ("beto", "viewer")]:
         v.fill(".modal input[placeholder='Nombre de usuario']", usuario); v.select_option(".modal select[aria-label=Rol] >> nth=0", rol); v.click(".modal button:has-text('Agregar')")
         v.wait_for_selector(f".lista-miembros >> text=@{usuario}")
@@ -135,7 +148,7 @@ with sync_playwright() as pw:
     a = b.new_context(viewport={"width": 1280, "height": 800}).new_page(); observar(a, "ana")
     entrar(a, "ana.mora", claves["ana.mora"]); crear_clave(a, "Ana-Segura-2026")
     a.wait_for_selector("text=Hola Ana"); check("editora entra sin pedir token (lo abre con su llave)", True)
-    a.click("button.nav-item:has-text('Q3 Proyecto Alpha')"); a.wait_for_selector("text=Requisitos")
+    abrir_tarea(a); a.wait_for_selector("text=Requisitos")
     a.fill("input[aria-label^='Agregar subtarea a']", "Tarea de Ana"); a.keyboard.press("Enter"); a.wait_for_selector("text=Guardado en GitHub", timeout=15000)
     v.wait_for_selector("text=Tarea de Ana", timeout=35000); check("el cambio de la editora aparece solo en la otra sesión (≤ 20 s)", True)
 
@@ -143,7 +156,7 @@ with sync_playwright() as pw:
     raw_antes = json.loads(control())["raw"]
     entrar(l, "beto", claves["beto"]); l.wait_for_selector("text=Hola Beto")
     check("lector entra sin cambio obligatorio de clave ni token", l.locator("text=Creá tu contraseña").count() == 0)
-    l.click("button.nav-item:has-text('Q3 Proyecto Alpha')"); l.wait_for_selector("text=Tarea de Ana")
+    abrir_tarea(l); l.wait_for_selector("text=Tarea de Ana")
     check("lector lee desde raw.githubusercontent", json.loads(control())["raw"] > raw_antes)
     check("lector: solo lectura (sin agregar tareas ni nuevo proyecto)", l.locator("input[aria-label^='Agregar subtarea a']").count() == 0 and l.locator("text=+ Nuevo proyecto").count() == 0)
     l.locator("tr.fila:has-text('Requisitos') button.abrir").click(); l.wait_for_selector(".lista-adjuntos >> text=informe.pdf")
@@ -159,12 +172,12 @@ with sync_playwright() as pw:
     a.wait_for_selector("text=Iniciar sesión", timeout=35000); check("la sesión de la editora se cierra sola", True)
     entrar(a, "ana.mora", "Ana-Segura-2026"); a.wait_for_selector("text=Usuario o contraseña incorrectos."); check("la editora ya no puede entrar", True)
     l.wait_for_selector("text=Iniciar sesión", timeout=35000)
-    entrar(l, "beto", claves["beto"]); l.wait_for_selector("text=Hola Beto"); l.click("button.nav-item:has-text('Q3 Proyecto Alpha')")
+    entrar(l, "beto", claves["beto"]); l.wait_for_selector("text=Hola Beto"); abrir_tarea(l)
     l.wait_for_selector("text=Tarea de Ana"); check("el lector recibe la llave nueva y sigue leyendo", True)
     check("la administradora sigue trabajando sin interrupción", v.locator("text=Usuarios y permisos").count() >= 1)
     v.click(".cuenta .nav-item"); v.click("text=Cerrar sesión"); v.wait_for_selector("text=Iniciar sesión")
     entrar(v, "VeronicaDelgado1", "Vero-Segura-2026"); v.wait_for_selector("text=Hola Verónica")
-    v.click("button.nav-item:has-text('Q3 Proyecto Alpha')"); v.fill("input[aria-label^='Agregar subtarea a']", "Después de rotar"); v.keyboard.press("Enter")
+    abrir_tarea(v); v.fill("input[aria-label^='Agregar subtarea a']", "Después de rotar"); v.keyboard.press("Enter")
     v.wait_for_selector("text=Guardado en GitHub", timeout=15000); check("la administradora sigue guardando tras la rotación", True)
 
     print("Seguridad del sitio")

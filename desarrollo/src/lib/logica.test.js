@@ -104,7 +104,9 @@ describe("avisos de vencimiento", () => {
   });
   it("el 27 avisa del proyecto que vence el 28 con el texto pedido", () => {
     const a = avisosDeVencimiento(proyectos, "Vero", hoy);
-    expect(a.find((x) => x.proyectoId === "a").texto).toBe("Vero, el proyecto Pase a producción está pronto a vencer, revisalo");
+    expect(a.find((x) => x.proyectoId === "a").texto).toBe("Vero, la tarea Pase a producción está pronta a vencer, revisala");
+    const [conCarpeta] = avisosDeVencimiento([{ ...proyectos[0], carpeta_id: "k" }], "Vero", hoy, { k: { name: "IVR" } });
+    expect(conCarpeta.texto).toBe("Vero, la tarea Pase a producción del proyecto IVR está pronta a vencer, revisala");
   });
   it("avisa también si vence hoy o ya venció; no los lejanos ni los sin fecha", () => {
     const a = avisosDeVencimiento(proyectos, "Vero", hoy);

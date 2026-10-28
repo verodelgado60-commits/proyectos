@@ -18,7 +18,7 @@ const VISTAS = [
   { id: "resumen", nombre: "Resumen" },
 ];
 
-export default function Proyecto({ proyecto, perfil, avisar, cambioLocal }) {
+export default function Proyecto({ proyecto, perfil, avisar, cambioLocal , carpetas = [], carpeta = null }) {
   const d = useProyecto(proyecto.id, avisar);
   const [vista, setVista] = useState(() => { try { return localStorage.getItem("vista") || "tabla"; } catch { return "tabla"; } });
   const [filtros, setFiltros] = useState({ texto: "", responsable: "", estado: "", prioridad: "" });
@@ -41,10 +41,10 @@ export default function Proyecto({ proyecto, perfil, avisar, cambioLocal }) {
 
   const actualizarProyecto = (cambios) => d.api.actualizarProyecto(proyecto, cambios, cambioLocal);
   const eliminarProyecto = async () => {
-    if (await d.api.eliminarProyecto(proyecto, cambioLocal)) { avisar("Proyecto eliminado"); window.location.hash = ""; }
+    if (await d.api.eliminarProyecto(proyecto, cambioLocal)) { avisar("Tarea eliminada"); window.location.hash = carpeta ? `/c/${carpeta.id}` : ""; }
   };
   const salir = async () => {
-    if (await d.api.salirProyecto(proyecto, perfil.id, cambioLocal)) { avisar("Saliste del proyecto"); window.location.hash = ""; }
+    if (await d.api.salirProyecto(proyecto, perfil.id, cambioLocal)) { avisar("Saliste de la tarea"); window.location.hash = ""; }
   };
   const nuevoGrupo = () => d.api.crearGrupo({ name: "Subtareas", color: COLORES[d.groups.length % COLORES.length], position: posicionAlFinal(d.groups) });
 
@@ -67,6 +67,9 @@ export default function Proyecto({ proyecto, perfil, avisar, cambioLocal }) {
   return (
     <section className="proyecto">
       <header className="cabecera-proyecto">
+        <nav className="migas-proyecto" aria-label="Ubicación">
+          <a href={`#/c/${carpeta ? carpeta.id : "sin-proyecto"}`}>← {carpeta ? carpeta.name : "Sin proyecto"}</a>
+        </nav>
         <div className="titulo-proyecto">
           <i className="punto grande" style={{ background: proyecto.color }} />
           <h1><TextoEditable valor={proyecto.name} editable={puedeEditar} max={120} onGuardar={(name) => actualizarProyecto({ name })} /></h1>
@@ -77,9 +80,9 @@ export default function Proyecto({ proyecto, perfil, avisar, cambioLocal }) {
           <Desplegable alinear="derecha" boton={({ alternar }) => <button className="boton icono" onClick={alternar} aria-label="Más opciones">•••</button>}>
             {(cerrar) => (<>
               {puedeEditar && <button className="opcion-menu" onClick={() => { cerrar(); setDialogo("etiquetas"); }}>Editar estados y prioridades</button>}
-              {puedeEditar && <button className="opcion-menu" onClick={() => { cerrar(); setDialogo("color"); }}>Cambiar color y descripción</button>}
-              {!esDueno && <button className="opcion-menu" onClick={() => { cerrar(); setDialogo("salir"); }}>Salir del proyecto</button>}
-              {esDueno && <button className="opcion-menu peligro" onClick={() => { cerrar(); setDialogo("eliminar"); }}>Eliminar proyecto</button>}
+              {puedeEditar && <button className="opcion-menu" onClick={() => { cerrar(); setDialogo("color"); }}>Color, descripción y proyecto</button>}
+              {!esDueno && <button className="opcion-menu" onClick={() => { cerrar(); setDialogo("salir"); }}>Salir de la tarea</button>}
+              {esDueno && <button className="opcion-menu peligro" onClick={() => { cerrar(); setDialogo("eliminar"); }}>Eliminar tarea</button>}
             </>)}
           </Desplegable>
         </div>
@@ -126,24 +129,29 @@ export default function Proyecto({ proyecto, perfil, avisar, cambioLocal }) {
       {tareaAbierta && <PanelTarea tarea={tareaAbierta} {...props} esDueno={esDueno} onClose={() => setAbierta(null)} />}
       {dialogo === "miembros" && <Miembros proyecto={proyecto} {...props} esDueno={esDueno} onClose={() => setDialogo(null)} />}
       {dialogo === "etiquetas" && <Etiquetas {...props} onClose={() => setDialogo(null)} />}
-      {dialogo === "color" && <EditarProyecto proyecto={proyecto} guardar={actualizarProyecto} onClose={() => setDialogo(null)} />}
-      {dialogo === "eliminar" && <Confirmar mensaje={`¿Eliminar "${proyecto.name}"?`} detalle="Se borrarán todas sus tareas, subtareas y comentarios para todo el equipo. No se puede deshacer."
+      {dialogo === "color" && <EditarProyecto proyecto={proyecto} carpetas={carpetas} guardar={actualizarProyecto} onClose={() => setDialogo(null)} />}
+      {dialogo === "eliminar" && <Confirmar mensaje={`¿Eliminar "${proyecto.name}"?`} detalle="Se borrarán todas sus subtareas, pasos, comentarios y adjuntos para todo el equipo. No se puede deshacer."
         onNo={() => setDialogo(null)} onSi={() => { setDialogo(null); eliminarProyecto(); }} />}
-      {dialogo === "salir" && <Confirmar mensaje="¿Salir de este proyecto?" detalle="Vas a dejar de verlo hasta que te vuelvan a agregar." textoSi="Salir"
+      {dialogo === "salir" && <Confirmar mensaje="¿Salir de esta tarea?" detalle="Vas a dejar de verlo hasta que te vuelvan a agregar." textoSi="Salir"
         onNo={() => setDialogo(null)} onSi={() => { setDialogo(null); salir(); }} />}
     </section>
   );
 }
 
-function EditarProyecto({ proyecto, guardar, onClose }) {
+function EditarProyecto({ proyecto, carpetas, guardar, onClose }) {
   const [color, setColor] = useState(proyecto.color);
   const [descripcion, setDescripcion] = useState(proyecto.description);
+  const [carpeta, setCarpeta] = useState(proyecto.carpeta_id ?? "");
   return (
-    <Confirmar mensaje="Color y descripción" textoSi="Guardar" onNo={onClose}
-      onSi={() => { guardar({ color, description: descripcion.trim() }); onClose(); }}
+    <Confirmar mensaje="Color, descripción y proyecto" textoSi="Guardar" onNo={onClose}
+      onSi={() => { guardar({ color, description: descripcion.trim(), carpeta_id: carpeta || null }); onClose(); }}
       detalle={<span className="bloque">
+        <label className="campo" htmlFor="mover-carpeta"><span>Proyecto</span><select id="mover-carpeta" value={carpeta} onChange={(e) => setCarpeta(e.target.value)}>
+          <option value="">Sin proyecto</option>
+          {carpetas.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select></label>
         <SelectorColor valor={color} onCambiar={setColor} />
-        <textarea className="ancho" rows={3} maxLength={2000} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Descripción del proyecto" />
+        <textarea className="ancho" rows={3} maxLength={2000} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Descripción de la tarea" />
       </span>} />
   );
 }

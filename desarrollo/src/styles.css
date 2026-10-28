@@ -463,3 +463,18 @@ button.chip-vence { cursor: pointer; }
 .stopper-tarjeta { margin: 4px 0 8px; font-size: 12px; color: #c42e24; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .aviso-stopper strong, :root:not([data-theme="light"]) .stopper-tarjeta { color: #ff8a80; } }
 :root[data-theme="dark"] .aviso-stopper strong, :root[data-theme="dark"] .stopper-tarjeta { color: #ff8a80; }
+
+/* Proyectos (carpetas) y sus tareas en el menú */
+.grupo-nav { display: flex; flex-direction: column; }
+.nav-carpeta { gap: 6px; }
+.nav-carpeta small { margin-left: auto; font-variant-numeric: tabular-nums; }
+.flecha-nav { width: 12px; color: var(--tenue); font-size: 11px; }
+.subnav { display: flex; flex-direction: column; margin: 2px 0 6px 18px; padding-left: 8px; border-left: 2px solid var(--borde); }
+.nav-tarea { font-size: 13px; padding-top: 6px; padding-bottom: 6px; }
+.nav-crear { color: var(--primario); font-weight: 600; }
+.titulo-carpeta { display: flex; align-items: center; gap: 12px; }
+.titulo-carpeta h1 { margin: 0; }
+.menu-colores { padding: 8px 10px; max-width: 240px; }
+.migas-proyecto { margin-bottom: 6px; font-size: 13px; }
+.migas-proyecto a { color: var(--tenue); text-decoration: none; font-weight: 600; }
+.migas-proyecto a:hover { color: var(--primario); }

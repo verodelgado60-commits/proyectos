@@ -14,6 +14,18 @@ const base = () => ({
 const ctx = (tablas, id = yo, rol = "editor") => ({ sesion: { user: { id }, rol }, tablas, nuevoId: () => Math.random().toString(36).slice(2), extra: [], archivos: [] });
 
 describe("reglas de negocio", () => {
+  it("proyectos (carpetas): editor y admin crean; lector no; al borrar, sus tareas quedan sin proyecto", () => {
+    const c = reglas.insertar("carpetas", { id: "k1", name: " IVR " }, ctx({}));
+    expect(c).toEqual(expect.objectContaining({ name: "IVR", created_by: yo }));
+    expect(() => reglas.insertar("carpetas", { id: "k2", name: "IA" }, ctx({}, "u2", "lector"))).toThrow();
+    expect(() => reglas.actualizar("carpetas", c, { name: "x" }, ctx({}, "u2", "lector"))).toThrow();
+    const t = { ...base(), projects: [{ id: "p1", name: "P", carpeta_id: "k1" }, { id: "p9", name: "Q", carpeta_id: "otra" }] };
+    const cx = ctx(t, yo, "admin");
+    reglas.borrar("carpetas", c, cx);
+    const r = aplicarOps(t, cx.extra, claves);
+    expect(r.projects.map((p) => p.carpeta_id)).toEqual([null, "otra"]);
+    expect(r.tasks).toHaveLength(2);
+  });
   it("crear proyecto agrega dueño, 8 etiquetas y un grupo", () => {
     const c = ctx({ project_members: [] });
     const p = reglas.insertar("projects", { id: "p2", name: "Nuevo" }, c);

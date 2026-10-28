@@ -10,7 +10,7 @@ export default function TablaVista(props) {
   const [arrastrando, setArrastrando] = useState(null);
 
   if (!groups.length) {
-    return <div className="vacio"><p>Este proyecto no tiene grupos.</p>
+    return <div className="vacio"><p>Esta tarea no tiene secciones.</p>
       {puedeEditar && <button className="boton primario" onClick={() => api.crearGrupo({ name: "Subtareas", color: COLORES[0], position: 1 })}>+ Crear sección</button>}</div>;
   }
   return (

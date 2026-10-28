@@ -28,6 +28,24 @@ export function useProyectos(usuarioId, avisar) {
   return { proyectos, setProyectos, cargando, recargar: cargar };
 }
 
+// ---------- Proyectos (carpetas) que agrupan tareas ----------
+export function useCarpetas(usuarioId, avisar) {
+  const [carpetas, setCarpetas] = useState([]);
+  const cargar = useCallback(async () => {
+    const { data, error } = await supabase.from("carpetas").select("*").order("position").order("created_at");
+    if (error) avisar?.(traducirError(error), "error"); else setCarpetas(data);
+  }, [avisar]);
+  useEffect(() => {
+    if (!usuarioId) return;
+    cargar();
+    const canal = supabase.channel(`carpetas-${usuarioId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "carpetas" }, (ev) => setCarpetas((l) => ordenar(aplicarCambio(l, ev))))
+      .subscribe();
+    return () => { supabase.removeChannel(canal); };
+  }, [usuarioId, cargar]);
+  return { carpetas, setCarpetas };
+}
+
 // ---------- Todo lo de un proyecto, sincronizado en vivo ----------
 const TABLAS = ["groups", "labels", "tasks", "project_members"];
 

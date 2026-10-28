@@ -8,13 +8,13 @@ const claveLeidas = (uid) => `avisos-leidos:${uid}`;
 function leerLeidas(uid) { try { return new Set(JSON.parse(localStorage.getItem(claveLeidas(uid)) || "[]")); } catch { return new Set(); } }
 function guardarLeidas(uid, set) { try { localStorage.setItem(claveLeidas(uid), JSON.stringify([...set].slice(-300))); } catch { /* sin almacenamiento */ } }
 
-export default function Notificaciones({ perfil, proyectos, alAbrir, className = "" }) {
+export default function Notificaciones({ perfil, proyectos, carpetas = {}, alAbrir, className = "" }) {
   const [ahora, setAhora] = useState(() => new Date());
   const [leidas, setLeidas] = useState(() => leerLeidas(perfil.id));
   useEffect(() => { const t = setInterval(() => setAhora(new Date()), 60000); return () => clearInterval(t); }, []);
 
   const nombre = perfil.nickname || (perfil.full_name || perfil.username || "").split(" ")[0];
-  const avisos = useMemo(() => avisosDeVencimiento(proyectos, nombre, ahora), [proyectos, nombre, ahora]);
+  const avisos = useMemo(() => avisosDeVencimiento(proyectos, nombre, ahora, carpetas), [proyectos, nombre, ahora, carpetas]);
   const sinLeer = avisos.filter((a) => !leidas.has(a.id)).length;
 
   const marcar = (ids) => { const n = new Set(leidas); ids.forEach((i) => n.add(i)); setLeidas(n); guardarLeidas(perfil.id, n); };
@@ -33,7 +33,7 @@ export default function Notificaciones({ perfil, proyectos, alAbrir, className =
             <strong>Notificaciones</strong>
             {sinLeer > 0 && <button className="enlace" onClick={() => marcar(avisos.map((a) => a.id))}>Marcar leídas</button>}
           </header>
-          {!avisos.length && <p className="tenue pequeno vacio-avisos">No hay proyectos por vencer. Te avisamos aquí un día antes de cada fecha de vencimiento.</p>}
+          {!avisos.length && <p className="tenue pequeno vacio-avisos">No hay tareas por vencer. Te avisamos aquí un día antes de cada fecha de vencimiento.</p>}
           <ul className="lista-avisos">
             {avisos.map((a) => (
               <li key={a.id}>

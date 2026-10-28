@@ -21,7 +21,7 @@ export default function Miembros({ proyecto, project_members, perfiles, perfil, 
     const { error: e2 } = await supabase.from("project_members").insert({ project_id: proyecto.id, user_id: p.id, role: rol });
     setEnviando(false);
     if (e2) { avisar(traducirError(e2), "error"); return; }
-    setUsuario(""); avisar(`${p.full_name || p.username} se unió al proyecto`);
+    setUsuario(""); avisar(`${p.full_name || p.username} se unió a la tarea`);
     api.recargar();
   };
 
@@ -37,7 +37,7 @@ export default function Miembros({ proyecto, project_members, perfiles, perfil, 
   const ordenados = [...project_members].sort((a, b) => (a.role === "owner" ? -1 : b.role === "owner" ? 1 : 0));
 
   return (
-    <Modal titulo="Equipo del proyecto" onClose={onClose} ancho={520}>
+    <Modal titulo="Equipo de la tarea" onClose={onClose} ancho={520}>
       {esDueno && (
         <form className="fila-formulario" onSubmit={agregar}>
           <input placeholder="Nombre de usuario" value={usuario} onChange={(e) => setUsuario(e.target.value)} autoCapitalize="none" spellCheck="false" aria-label="Nombre de usuario" />
@@ -45,7 +45,7 @@ export default function Miembros({ proyecto, project_members, perfiles, perfil, 
           <button className="boton primario" disabled={!usuario.trim() || enviando}>Agregar</button>
         </form>
       )}
-      <p className="tenue pequeno">Dueño: administra el equipo y puede eliminar el proyecto · Editor: crea y edita tareas · Lector: solo ve y comenta.</p>
+      <p className="tenue pequeno">Dueño: administra el equipo y puede eliminar la tarea · Editor: crea y edita subtareas · Lector: solo ve y comenta.</p>
       <ul className="lista-miembros">
         {ordenados.map((m) => {
           const p = perfiles[m.user_id];

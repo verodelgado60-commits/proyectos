@@ -5,7 +5,7 @@ Plataforma web **estática** publicada con GitHub Pages. Guarda sus datos **cifr
 **Sitio:** https://verodelgado60-commits.github.io/proyectos/
 
 ## Qué hace
-Proyectos estilo Monday: grupos, tareas, subtareas, estados y prioridades editables, responsables, fechas, estimaciones, comentarios y **adjuntos cifrados**. Vistas de tabla, tablero y resumen; adaptable a computadora, tablet y celular.
+Proyectos (por ejemplo IA, IVR) que agrupan tareas; cada tarea con secciones de subtareas numeradas, pasos, estados y prioridades editables, responsables, fechas, estimaciones, comentarios y **adjuntos cifrados**. Vistas de tabla, tablero y resumen; adaptable a computadora, tablet y celular.
 
 ## Cómo funciona
 
