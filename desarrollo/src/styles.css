@@ -419,21 +419,19 @@ button.chip-vence { cursor: pointer; }
 .aviso:not(.leido) .texto-aviso { font-weight: 500; }
 .cabecera-avisos .enlace { white-space: nowrap; font-size: 13px; }
 
-/* Menú al lado derecho */
-.espacio { grid-template-columns: minmax(0, 1fr) 248px; }
-.espacio > .barra-lateral { order: 2; border-right: 0; border-left: 1px solid var(--borde); }
-.espacio > .principal { order: 1; }
+/* Menú a la izquierda; la campanita queda arriba a la derecha de la pantalla */
 .barra-lateral .marca { font-size: 18px; }
-.barra-lateral .campana .menu { left: auto; right: calc(16px + env(safe-area-inset-right, 0px)); }
-.barra-lateral .cuenta .menu-arriba { left: auto; right: 0; }
-@media (max-width: 860px) {
-  .espacio { grid-template-columns: 1fr; }
-  .espacio > .barra-lateral { inset: 0 0 0 auto; transform: translateX(100%); border-left: 1px solid var(--borde); }
-  .menu-abierto > .barra-lateral { transform: none; }
-  .boton-menu { left: auto; right: calc(10px + env(safe-area-inset-right, 0px)); }
-  .campana-movil { right: calc(58px + env(safe-area-inset-right, 0px)); }
-  .cabecera-proyecto { padding-left: 16px; padding-right: 108px; }
+@media (min-width: 861px) {
+  .campana-movil { display: inline-flex; position: fixed; top: calc(16px + env(safe-area-inset-top, 0px)); right: calc(20px + env(safe-area-inset-right, 0px)); z-index: 20; }
+  .campana-movil .menu { right: 0; left: auto; }
+  .titulo-proyecto, .titulo-carpeta { padding-right: 52px; }
+  .inicio > h1:first-child { padding-right: 52px; }
 }
+.opciones-borrar { display: grid; gap: 8px; margin-top: 10px; text-align: left; }
+.opciones-borrar label { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; color: var(--texto); }
+.opciones-borrar input { margin-top: 3px; }
+.boton.eliminar-carpeta { color: var(--peligro); border-color: var(--peligro-borde); }
+.boton.eliminar-carpeta:hover { background: var(--peligro-bg); }
 
 /* Listas desplegables en la tabla */
 .lista-etiqueta { position: relative; display: flex; align-items: center; height: 40px; width: 100%; background: var(--vacio-bg); color: var(--tenue); }

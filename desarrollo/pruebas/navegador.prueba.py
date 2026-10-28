@@ -128,6 +128,22 @@ with sync_playwright() as pw:
     check("recarga: la sesión sigue y los datos están", v.locator("tr.fila").count() == 3)
     v.screenshot(path=C + "03_tabla.png", full_page=True)
 
+    print("Eliminar proyectos")
+    for nombre, tarea, borrar_tareas in [("Temporal", "Para borrar", True), ("Viejo", "Se conserva", False)]:
+        v.click("text=+ Nuevo proyecto"); v.fill("#nc-nombre", nombre); v.click(".modal button:has-text('Crear proyecto')")
+        v.wait_for_selector(f".vista-carpeta h1:has-text('{nombre}')")
+        v.click(".vista-carpeta button:has-text('+ Crear tarea')"); v.fill("#nt-nombre", tarea); v.click(".modal button:has-text('Crear tarea')")
+        v.wait_for_selector(f"h1:has-text('{tarea}')"); v.click(".migas-proyecto a"); v.wait_for_selector(f".vista-carpeta h1:has-text('{nombre}')")
+        v.click("button:has-text('🗑 Eliminar proyecto')"); v.wait_for_selector(".capa >> text=Tiene 1 tarea")
+        if borrar_tareas: v.click(".opciones-borrar label:has-text('Eliminarlas también')")
+        if nombre == "Temporal": v.screenshot(path=C + "02c_eliminar.png")
+        v.click(".capa button:has-text('Eliminar')")
+        v.wait_for_selector("text=Hola Ver", timeout=10000)
+        v.wait_for_function(f"() => ![...document.querySelectorAll('button.nav-carpeta')].some(b => b.textContent.includes('{nombre}'))", timeout=10000)
+    check("eliminar proyecto con sus tareas: desaparecen ambos", v.locator("button.nav-carpeta:has-text('Sin proyecto')").count() == 1)
+    v.click("button.nav-carpeta:has-text('Sin proyecto')"); v.wait_for_selector(".vista-carpeta")
+    check("eliminar proyecto conservando tareas: pasan a Sin proyecto", v.locator(".vista-carpeta .tarjeta-proyecto:has-text('Se conserva')").count() == 1 and v.locator("text=Para borrar").count() == 0)
+    v.click(".vista-carpeta .tarjeta-proyecto:has-text('Se conserva')"); v.wait_for_selector("text=Guardado en GitHub", timeout=15000)
     print("Usuarios y permisos")
     v.click("button.nav-item:has-text('Usuarios y permisos')"); v.wait_for_selector("h1:has-text('Usuarios y permisos')")
     claves = {}

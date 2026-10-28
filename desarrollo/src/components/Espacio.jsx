@@ -64,7 +64,7 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
   return (
     <div className={`espacio ${menuMovil ? "menu-abierto" : ""}`}>
       <aside className="barra-lateral" aria-label="Navegación">
-        <div className="marca"><span>Proyectos</span><span className="empuje" /><Notificaciones perfil={perfil} proyectos={proyectos} carpetas={mapaCarpetas} alAbrir={(id) => ir(`/p/${id}`)} /></div>
+        <div className="marca"><span>Proyectos</span></div>
         {escribe && <button className="boton primario ancho" onClick={() => setNuevaCarpeta(true)}>+ Nuevo proyecto</button>}
         <nav>
           <button className={`nav-item ${ruta.tipo === "inicio" ? "activo" : ""}`} onClick={() => ir("")}>🏠 Inicio</button>
@@ -112,7 +112,7 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
 
       <main className="principal">
         <button className="boton-menu" onClick={() => setMenuMovil(true)} aria-label="Abrir menú">☰</button>
-        <Notificaciones className="campana-movil" perfil={perfil} proyectos={proyectos} carpetas={mapaCarpetas} alAbrir={(id) => ir(`/p/${id}`)} />
+        <Notificaciones className="campana-movil campana-fija" perfil={perfil} proyectos={proyectos} carpetas={mapaCarpetas} alAbrir={(id) => ir(`/p/${id}`)} />
         {ruta.tipo === "usuarios" && perfil.is_admin && <AdminUsuarios perfil={perfil} avisar={avisar} />}
         {ruta.tipo === "proyecto" && actual && <Proyecto key={actual.id} proyecto={actual} perfil={perfil} avisar={avisar} cambioLocal={cambioLocal}
           carpetas={carpetas} carpeta={mapaCarpetas[actual.carpeta_id] ?? null} escribe={escribe} />}
@@ -167,15 +167,22 @@ function Inicio({ perfil, carpetas, sueltas, tareasDe, cargando, escribe, onNuev
 // Pantalla de un proyecto: sus tareas y "+ Crear tarea"
 function VistaCarpeta({ carpeta, tareas, escribe, cargando, avisar, ir, onNueva, onBorrada }) {
   const [borrar, setBorrar] = useState(false);
+  const [conTareas, setConTareas] = useState(false);
   const real = carpeta.id !== SIN;
   const guardar = async (cambios) => {
     const { error } = await supabase.from("carpetas").update(cambios).eq("id", carpeta.id);
     if (error) avisar(traducirError(error), "error");
   };
   const eliminar = async () => {
+    if (conTareas) {
+      for (const t of tareas) {
+        const { error } = await supabase.from("projects").delete().eq("id", t.id);
+        if (error) { avisar(`No se pudo eliminar la tarea «${t.name}»: ${traducirError(error)}`, "error"); return; }
+      }
+    }
     const { error } = await supabase.from("carpetas").delete().eq("id", carpeta.id);
     if (error) { avisar(traducirError(error), "error"); return; }
-    avisar("Proyecto eliminado"); onBorrada(carpeta.id);
+    avisar(conTareas && tareas.length ? "Proyecto y sus tareas eliminados" : "Proyecto eliminado"); onBorrada(carpeta.id);
   };
   return (
     <section className="inicio vista-carpeta">
@@ -183,11 +190,11 @@ function VistaCarpeta({ carpeta, tareas, escribe, cargando, avisar, ir, onNueva,
         <i className="punto grande" style={{ background: carpeta.color }} />
         <h1>{real ? <TextoEditable valor={carpeta.name} editable={escribe} max={80} onGuardar={(name) => guardar({ name })} /> : carpeta.name}</h1>
         <span className="empuje" />
+        {real && escribe && <button className="boton eliminar-carpeta" onClick={() => { setConTareas(false); setBorrar(true); }}>🗑 Eliminar proyecto</button>}
         {real && escribe && (
           <Desplegable alinear="derecha" boton={({ alternar }) => <button className="boton icono" onClick={alternar} aria-label="Más opciones del proyecto">•••</button>}>
             {(cerrar) => (<>
               <div className="menu-colores"><SelectorColor valor={carpeta.color} onCambiar={(color) => { guardar({ color }); cerrar(); }} /></div>
-              <button className="opcion-menu peligro" onClick={() => { cerrar(); setBorrar(true); }}>Eliminar proyecto</button>
             </>)}
           </Desplegable>
         )}
@@ -205,7 +212,14 @@ function VistaCarpeta({ carpeta, tareas, escribe, cargando, avisar, ir, onNueva,
           <button className="tarjeta-proyecto nueva" onClick={onNueva}><strong>+ Crear tarea</strong><span className="tenue">Con subtareas, estados y prioridades listos para usar</span></button>
         )}
       </div>
-      {borrar && <Confirmar mensaje={`¿Eliminar el proyecto "${carpeta.name}"?`} detalle="Sus tareas no se borran: pasan a «Sin proyecto»."
+      {borrar && <Confirmar mensaje={`¿Eliminar el proyecto "${carpeta.name}"?`}
+        detalle={!tareas.length ? "No tiene tareas." : (
+          <span className="opciones-borrar" role="radiogroup" aria-label="Qué hacer con sus tareas">
+            <span>{tareas.length === 1 ? "Tiene 1 tarea. ¿Qué hacemos con ella?" : `Tiene ${tareas.length} tareas. ¿Qué hacemos con ellas?`}</span>
+            <label><input type="radio" name="con-tareas" checked={!conTareas} onChange={() => setConTareas(false)} /> Pasarlas a «Sin proyecto» (no se pierde nada)</label>
+            <label><input type="radio" name="con-tareas" checked={conTareas} onChange={() => setConTareas(true)} /> Eliminarlas también, con sus subtareas, comentarios y adjuntos. No se puede deshacer.</label>
+          </span>
+        )}
         onNo={() => setBorrar(false)} onSi={() => { setBorrar(false); eliminar(); }} />}
     </section>
   );
