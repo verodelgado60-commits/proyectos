@@ -477,18 +477,5 @@ button.chip-vence { cursor: pointer; }
 .migas-proyecto a { color: var(--tenue); text-decoration: none; font-weight: 600; }
 .migas-proyecto a:hover { color: var(--primario); }
 
-/* Importar de Excel */
-.subir-excel { display: inline-flex; gap: 6px; align-items: center; margin: 8px 0 12px; cursor: pointer; }
-.filtros-import { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
-.lista-import { list-style: none; margin: 0; padding: 0; max-height: 46vh; overflow: auto; border: 1px solid var(--borde); border-radius: 8px; }
-.lista-import li + li { border-top: 1px solid var(--borde-suave, var(--borde)); }
-.lista-import label { display: grid; grid-template-columns: auto minmax(0, 1fr) auto 64px; gap: 10px; align-items: center; padding: 8px 10px; cursor: pointer; font-size: 14px; }
-.nombre-import { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.estado-import { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--hover); color: var(--tenue); white-space: nowrap; }
-.estado-import.e-en-curso { background: #ffbe00; color: #30343c; }
-.estado-import.e-pendiente { background: #b0b0b4; color: #ffffff; }
-.estado-import.e-stopper { background: #e03c31; color: #ffffff; }
-.estado-import.e-listo { background: #1dcd9f; color: #30343c; }
-.fecha-import { text-align: right; }
 .vista-carpeta .titulo-carpeta { flex-wrap: wrap; }
 .cabecera-proyecto .descripcion { white-space: pre-line; overflow-wrap: anywhere; }

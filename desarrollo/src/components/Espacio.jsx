@@ -10,7 +10,6 @@ import CambiarClave from "./CambiarClave.jsx";
 import ActualizarToken from "./ActualizarToken.jsx";
 import { EstadoGuardado } from "./Sistema.jsx";
 import Notificaciones from "./Notificaciones.jsx";
-import ImportarExcel from "./ImportarExcel.jsx";
 
 function leerRuta() {
   const h = window.location.hash.replace(/^#\/?/, "");
@@ -168,7 +167,6 @@ function Inicio({ perfil, carpetas, sueltas, tareasDe, cargando, escribe, onNuev
 // Pantalla de un proyecto: sus tareas y "+ Crear tarea"
 function VistaCarpeta({ carpeta, tareas, perfil, escribe, cargando, avisar, ir, onNueva, onBorrada }) {
   const [borrar, setBorrar] = useState(false);
-  const [importar, setImportar] = useState(false);
   const [conTareas, setConTareas] = useState(false);
   const real = carpeta.id !== SIN;
   const guardar = async (cambios) => {
@@ -192,7 +190,6 @@ function VistaCarpeta({ carpeta, tareas, perfil, escribe, cargando, avisar, ir, 
         <i className="punto grande" style={{ background: carpeta.color }} />
         <h1>{real ? <TextoEditable valor={carpeta.name} editable={escribe} max={80} onGuardar={(name) => guardar({ name })} /> : carpeta.name}</h1>
         <span className="empuje" />
-        {real && escribe && <button className="boton" onClick={() => setImportar(true)}>📄 Importar de Excel</button>}
         {real && escribe && <button className="boton eliminar-carpeta" onClick={() => { setConTareas(false); setBorrar(true); }}>🗑 Eliminar proyecto</button>}
         {real && escribe && (
           <Desplegable alinear="derecha" boton={({ alternar }) => <button className="boton icono" onClick={alternar} aria-label="Más opciones del proyecto">•••</button>}>
@@ -215,7 +212,6 @@ function VistaCarpeta({ carpeta, tareas, perfil, escribe, cargando, avisar, ir, 
           <button className="tarjeta-proyecto nueva" onClick={onNueva}><strong>+ Crear tarea</strong><span className="tenue">Con subtareas, estados y prioridades listos para usar</span></button>
         )}
       </div>
-      {importar && <ImportarExcel carpeta={carpeta} tareasActuales={tareas} perfil={perfil} avisar={avisar} onClose={() => setImportar(false)} />}
       {borrar && <Confirmar mensaje={`¿Eliminar el proyecto "${carpeta.name}"?`}
         detalle={!tareas.length ? "No tiene tareas." : (
           <span className="opciones-borrar" role="radiogroup" aria-label="Qué hacer con sus tareas">
