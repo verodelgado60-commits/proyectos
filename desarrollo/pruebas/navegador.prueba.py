@@ -62,6 +62,13 @@ with sync_playwright() as pw:
     v.locator("select[aria-label='Estado']").nth(0).select_option(label="Listo")
     v.locator("select[aria-label='Estado']").nth(1).select_option(label="En curso")
     v.locator("select[aria-label='Estado']").nth(2).select_option(label="Stopper")
+    v.wait_for_selector(".modal >> text=¿Cuál es el stopper?"); check("al elegir Stopper se pide el motivo", True)
+    v.fill(".modal textarea", "Falta la aprobación de finanzas"); v.click(".modal button:has-text('Guardar stopper')")
+    v.wait_for_selector("tr.fila .icono-stopper"); check("el stopper queda marcado en la fila", "Falta la aprobación" in v.locator("tr.fila .icono-stopper").first.get_attribute("title"))
+    v.locator("select[aria-label='Estado']").nth(1).select_option(label="Stopper")
+    v.wait_for_selector(".modal >> text=¿Cuál es el stopper?"); v.click(".modal button:has-text('Cancelar')")
+    v.wait_for_timeout(500)
+    check("si se cancela, el estado no cambia", v.locator("select[aria-label='Estado']").nth(1).evaluate("e => e.options[e.selectedIndex].text") == "En curso")
     fondo = lambda i: v.locator("select[aria-label='Estado']").nth(i).locator("..").evaluate("e => getComputedStyle(e).backgroundColor")
     v.wait_for_timeout(800)
     check("colores: Listo verde, En curso amarillo, Stopper rojo", [fondo(0), fondo(1), fondo(2)] == ["rgb(29, 205, 159)", "rgb(255, 190, 0)", "rgb(224, 60, 49)"])
@@ -84,6 +91,9 @@ with sync_playwright() as pw:
     v.keyboard.press("Escape")
     v.wait_for_selector("text=Guardado en GitHub", timeout=15000)
     v.reload(); v.wait_for_selector("h1:has-text('Q3 Proyecto Alpha')", timeout=20000)
+    check("tras recargar: el motivo del stopper sigue guardado", "Falta la aprobación" in (v.locator("tr.fila .icono-stopper").first.get_attribute("title") or ""))
+    v.click("tr.fila .icono-stopper"); v.wait_for_selector(".modal textarea")
+    check("el stopper se puede editar", v.input_value(".modal textarea") == "Falta la aprobación de finanzas"); v.click(".modal button:has-text('Cancelar')")
     check("tras recargar: prioridad, estimación y fecha guardadas",
       v.locator("select[aria-label='Prioridad']").nth(0).evaluate("e => e.options[e.selectedIndex].text") == "Alta"
       and v.locator("select[aria-label='Estimación en horas']").nth(0).input_value() == "4"

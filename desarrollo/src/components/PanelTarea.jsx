@@ -3,6 +3,7 @@ import Adjuntos from "./Adjuntos.jsx";
 import { useComentarios } from "../lib/datos.js";
 import { hace, posicionAlFinal, subtareasDe } from "../lib/logica.js";
 import { Avatar, CeldaEtiqueta, Confirmar, SelectorPersona, TextoEditable } from "./ui.jsx";
+import { AvisoStopper, useStopper } from "./Stopper.jsx";
 
 export default function PanelTarea({ tarea, tasks, groups, estados, prioridades, labels, project_members, perfiles, puedeEditar, esDueno, perfil, api, abrir, avisar, onClose }) {
   const [descripcion, setDescripcion] = useState(tarea.description ?? "");
@@ -11,7 +12,8 @@ export default function PanelTarea({ tarea, tasks, groups, estados, prioridades,
   const padre = tarea.parent_id ? tasks.find((t) => t.id === tarea.parent_id) : null;
   const subs = tarea.parent_id ? [] : subtareasDe(tasks, tarea.id);
   const listo = labels.find((l) => l.kind === "status" && l.is_done);
-  const cambiar = (c) => api.actualizarTarea(tarea.id, c);
+  const stopper = useStopper(estados, api.actualizarTarea);
+  const cambiar = (c) => stopper.cambiar(tarea, c);
 
   const refDesc = useRef(null);
   // Si otra persona cambia la descripción mientras escribís, no se te borra lo que estás escribiendo
@@ -41,6 +43,8 @@ export default function PanelTarea({ tarea, tasks, groups, estados, prioridades,
         </header>
         <h2 className="titulo-panel"><TextoEditable valor={tarea.title} editable={puedeEditar} onGuardar={(title) => cambiar({ title })} /></h2>
 
+        <AvisoStopper tarea={tarea} estados={estados} onEditar={puedeEditar ? () => stopper.editar(tarea) : undefined} />
+        {stopper.dialogo}
         <dl className="campos-tarea">
           <dt>Estado</dt><dd><CeldaEtiqueta etiquetas={estados} valor={tarea.status_id} editable={puedeEditar} onCambiar={(v) => cambiar({ status_id: v })} /></dd>
           <dt>Prioridad</dt><dd><CeldaEtiqueta etiquetas={prioridades} valor={tarea.priority_id} editable={puedeEditar} onCambiar={(v) => cambiar({ priority_id: v })} /></dd>
@@ -54,7 +58,7 @@ export default function PanelTarea({ tarea, tasks, groups, estados, prioridades,
             onChange={(e) => cambiar({ due_date: e.target.value || null })} aria-label="Fecha límite" /></dd>
           <dt>Estimación</dt><dd><input type="number" min="0" step="0.5" disabled={!puedeEditar} value={tarea.estimation ?? ""}
             onChange={(e) => cambiar({ estimation: e.target.value === "" ? null : Math.max(0, Number(e.target.value)) })} aria-label="Estimación" /></dd>
-          {!tarea.parent_id && <><dt>Grupo</dt><dd><select disabled={!puedeEditar} value={tarea.group_id ?? ""} onChange={(e) => cambiar({ group_id: e.target.value })}>
+          {!tarea.parent_id && <><dt>Sección</dt><dd><select disabled={!puedeEditar} value={tarea.group_id ?? ""} onChange={(e) => cambiar({ group_id: e.target.value })}>
             {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}</select></dd></>}
         </dl>
 
@@ -66,7 +70,7 @@ export default function PanelTarea({ tarea, tasks, groups, estados, prioridades,
 
         {!tarea.parent_id && (
           <section className="seccion-panel">
-            <h3>Subtareas {subs.length > 0 && <span className="tenue pequeno">({subs.filter((s) => labels.some((l) => l.id === s.status_id && l.is_done)).length}/{subs.length})</span>}</h3>
+            <h3>Pasos {subs.length > 0 && <span className="tenue pequeno">({subs.filter((s) => labels.some((l) => l.id === s.status_id && l.is_done)).length}/{subs.length})</span>}</h3>
             <ul className="lista-subtareas">
               {subs.map((s) => {
                 const hecha = labels.some((l) => l.id === s.status_id && l.is_done);
@@ -83,7 +87,7 @@ export default function PanelTarea({ tarea, tasks, groups, estados, prioridades,
                 );
               })}
             </ul>
-            {puedeEditar && <form onSubmit={agregarSub}><input className="entrada-nueva ancho" placeholder="+ Agregar subtarea" value={nuevaSub} onChange={(e) => setNuevaSub(e.target.value)} maxLength={300} /></form>}
+            {puedeEditar && <form onSubmit={agregarSub}><input className="entrada-nueva ancho" placeholder="+ Agregar paso" value={nuevaSub} onChange={(e) => setNuevaSub(e.target.value)} maxLength={300} /></form>}
           </section>
         )}
 

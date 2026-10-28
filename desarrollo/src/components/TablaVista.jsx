@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { COLORES, estaVencida, fechaCorta, ordenar, posicionAlFinal, posicionEntre, progreso, resumenEstados, subtareasDe } from "../lib/logica.js";
 import { Confirmar, Desplegable, ListaEtiqueta, SelectorPersona, TextoEditable } from "./ui.jsx";
+import { AvisoStopper, useStopper } from "./Stopper.jsx";
 
 const ESTIMACIONES = [0.5, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 40];
 
@@ -140,7 +141,8 @@ function Fila({ numero, tarea, tasks, puedeEditar, api, estados, prioridades, la
   const subs = esSub ? [] : subtareasDe(tasks, tarea.id);
   const hechas = subs.filter((s) => labels.some((l) => l.id === s.status_id && l.is_done)).length;
   const vencida = estaVencida(tarea, labels);
-  const cambiar = (c) => api.actualizarTarea(tarea.id, c);
+  const stopper = useStopper(estados, api.actualizarTarea);
+  const cambiar = (c) => stopper.cambiar(tarea, c);
   const comunes = { tasks, puedeEditar, api, estados, prioridades, labels, project_members, perfiles, abrir };
 
   const agregarSub = async (e) => {
@@ -162,6 +164,8 @@ function Fila({ numero, tarea, tasks, puedeEditar, api, estados, prioridades, la
             {expandida ? "▾" : "▸"}{subs.length > 0 && <small>{hechas}/{subs.length}</small>}
           </button>}
           <TextoEditable className="titulo-tarea" valor={tarea.title} editable={puedeEditar} onGuardar={(title) => cambiar({ title })} />
+          <AvisoStopper tarea={tarea} estados={estados} compacto onEditar={() => (puedeEditar ? stopper.editar(tarea) : abrir(tarea.id))} />
+          {stopper.dialogo}
           <button className="abrir" onClick={() => abrir(tarea.id)} aria-label={`Abrir ${tarea.title}`} title="Abrir detalle y comentarios">💬</button>
         </div>
       </td>

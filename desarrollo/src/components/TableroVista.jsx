@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { agruparPor, estaVencida, fechaCorta, POR_ESTADO_SIN, posicionAlFinal, posicionEntre, subtareasDe } from "../lib/logica.js";
 import { Avatar, CeldaEtiqueta, textoSobre } from "./ui.jsx";
+import { useStopper } from "./Stopper.jsx";
 
 export default function TableroVista({ visibles, estados, prioridades, labels, groups, tasks, perfiles, puedeEditar, api, abrir }) {
+  const stopper = useStopper(estados, api.actualizarTarea);
   const [arrastrando, setArrastrando] = useState(null);
   const [sobre, setSobre] = useState(null);
   const columnas = [...estados, { id: POR_ESTADO_SIN, name: "Sin estado", color: "#c4c4c4" }];
@@ -18,7 +20,8 @@ export default function TableroVista({ visibles, estados, prioridades, labels, g
       const i = lista.findIndex((t) => t.id === antesDe);
       position = posicionEntre(lista[i - 1]?.position ?? null, lista[i]?.position ?? null);
     } else position = posicionAlFinal(lista);
-    api.actualizarTarea(id, { status_id: colId === POR_ESTADO_SIN ? null : colId, position });
+    const tarea = tasks.find((t) => t.id === id);
+    if (tarea) stopper.cambiar(tarea, { status_id: colId === POR_ESTADO_SIN ? null : colId, position });
   };
 
   const agregar = (colId) => {
@@ -54,6 +57,7 @@ export default function TableroVista({ visibles, estados, prioridades, labels, g
                     onClick={() => abrir(t.id)} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && abrir(t.id)}>
                     {grupo && <span className="chip-grupo" style={{ borderColor: grupo.color, color: grupo.color }}>{grupo.name}</span>}
                     <h3>{t.title}</h3>
+                    {t.stopper && <p className="stopper-tarjeta" title={t.stopper}>⚠ {t.stopper}</p>}
                     <div className="pie-tarjeta">
                       <Avatar perfil={t.assignee_id ? perfiles[t.assignee_id] : null} size={24} />
                       {t.due_date && <span className={`fecha ${vencida ? "vencida" : ""}`}>📅 {fechaCorta(t.due_date)}</span>}
@@ -64,12 +68,13 @@ export default function TableroVista({ visibles, estados, prioridades, labels, g
                   </article>
                 );
               })}
-              {!tarjetas.length && <p className="tenue pequeno centro">{puedeEditar ? "Arrastrá tareas aquí" : "Sin tareas"}</p>}
+              {!tarjetas.length && <p className="tenue pequeno centro">{puedeEditar ? "Arrastrá subtareas aquí" : "Sin subtareas"}</p>}
             </div>
-            {puedeEditar && groups.length > 0 && <button className="agregar-tarjeta" onClick={() => agregar(col.id)}>+ Agregar tarea</button>}
+            {puedeEditar && groups.length > 0 && <button className="agregar-tarjeta" onClick={() => agregar(col.id)}>+ Agregar subtarea</button>}
           </div>
         );
       })}
+      {stopper.dialogo}
     </div>
   );
 }
