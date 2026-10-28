@@ -88,6 +88,9 @@ with sync_playwright() as pw:
     v.locator("select[aria-label='Prioridad']").nth(0).select_option(label="Alta")
     v.locator("select[aria-label='Estimación en horas']").nth(0).select_option(label="4 h")
     v.locator("tr.fila input[type=date]").nth(0).fill("2026-11-15")
+    import datetime
+    hoy = datetime.date.today().strftime("%d/%m/%Y")
+    check("columna Fecha de creación con la fecha de hoy", v.locator(".tabla th:nth-child(4)").first.inner_text() == "Fecha de creación" and v.locator("tr.fila .celda-creada").first.inner_text() == hoy)
     check("3 tareas con estados", v.locator("tr.fila").count() == 3)
     v.wait_for_selector("text=Guardado en GitHub", timeout=15000); check("indicador: guardado en GitHub", True)
     check("datos.json en GitHub está cifrado", b"Requisitos" not in control("?archivo=datos.json"))

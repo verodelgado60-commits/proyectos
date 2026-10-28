@@ -3,6 +3,12 @@ import { COLORES, estaVencida, fechaCorta, ordenar, posicionAlFinal, posicionEnt
 import { Confirmar, Desplegable, ListaEtiqueta, SelectorPersona, TextoEditable } from "./ui.jsx";
 import { AvisoStopper, useStopper } from "./Stopper.jsx";
 
+// Fecha (local) en que se creó la subtarea: dd/mm/aaaa
+const fechaCreacion = (iso) => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "—" : `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+};
 const ESTIMACIONES = [0.5, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 40];
 
 export default function TablaVista(props) {
@@ -76,6 +82,7 @@ function Grupo({ grupo, tareas, puedeEditar, api, estados, labels, arrastrando, 
                 <th className="col-tarea">Subtarea</th>
                 <th>Responsable</th>
                 <th>Estado</th>
+                <th>Fecha de creación</th>
                 <th>Fecha límite</th>
                 <th>Prioridad</th>
                 <th>Estimación</th>
@@ -90,7 +97,7 @@ function Grupo({ grupo, tareas, puedeEditar, api, estados, labels, arrastrando, 
               {puedeEditar && (
                 <tr className={`fila-agregar ${sobre ? "sobre" : ""}`}
                   onDragOver={(e) => { if (arrastrando) { e.preventDefault(); setSobre(true); } }} onDragLeave={() => setSobre(false)} onDrop={() => soltar(null)}>
-                  <td className="col-tarea" colSpan={6}>
+                  <td className="col-tarea" colSpan={7}>
                     <form onSubmit={agregar} className="form-agregar">
                       <button type="submit" className="boton-mas" aria-label="Agregar subtarea" title="Agregar subtarea">+</button>
                       <input className="entrada-nueva" placeholder={`${tareas.length + 1}. Escribí la subtarea y presioná Enter`} value={nueva} onChange={(e) => setNueva(e.target.value)} maxLength={300} aria-label={`Agregar subtarea a ${grupo.name}`} />
@@ -103,6 +110,7 @@ function Grupo({ grupo, tareas, puedeEditar, api, estados, labels, arrastrando, 
               <tfoot>
                 <tr>
                   <td className="col-tarea" />
+                  <td />
                   <td />
                   <td />
                   <td />
@@ -171,6 +179,7 @@ function Fila({ numero, tarea, tasks, puedeEditar, api, estados, prioridades, la
       </td>
       <td className="centro"><SelectorPersona miembros={project_members} perfiles={perfiles} valor={tarea.assignee_id} editable={puedeEditar} onCambiar={(v) => cambiar({ assignee_id: v })} /></td>
       <td className="celda-pastilla"><ListaEtiqueta etiqueta="Estado" etiquetas={estados} valor={tarea.status_id} editable={puedeEditar} onCambiar={(v) => cambiar({ status_id: v })} /></td>
+      <td className="centro tenue pequeno celda-creada" title={tarea.created_at ? `Creada el ${new Date(tarea.created_at).toLocaleString("es-CR")}` : undefined}>{fechaCreacion(tarea.created_at)}</td>
       <td className={`centro ${vencida ? "vencida" : ""}`}>
         {puedeEditar
           ? <input type="date" className="entrada-fecha campo-celda" value={tarea.due_date ?? ""} onChange={(e) => cambiar({ due_date: e.target.value || null })} aria-label="Fecha límite" />
@@ -190,7 +199,7 @@ function Fila({ numero, tarea, tasks, puedeEditar, api, estados, prioridades, la
     </tr>
     {expandida && subs.map((s, i) => <Fila key={s.id} numero={`${numero}${i + 1}`} tarea={s} esSub {...comunes} />)}
     {expandida && puedeEditar && (
-      <tr className="fila-sub fila-agregar"><td className="col-tarea" colSpan={6}>
+      <tr className="fila-sub fila-agregar"><td className="col-tarea" colSpan={7}>
         <form onSubmit={agregarSub}><input className="entrada-nueva" placeholder="+ Agregar paso" value={nuevaSub} onChange={(e) => setNuevaSub(e.target.value)} maxLength={300} /></form>
       </td></tr>
     )}
