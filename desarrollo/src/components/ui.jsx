@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
 import { iniciales } from "../lib/logica.js";
 
@@ -40,6 +41,8 @@ export function Desplegable({ boton, children, alinear = "izquierda", className 
   const [abierto, setAbierto] = useState(false);
   const [pos, setPos] = useState(null);
   const ref = useRef(null);
+  const refMenu = useRef(null);
+  const dentro = (n) => (ref.current && ref.current.contains(n)) || (refMenu.current && refMenu.current.contains(n));
   const alternar = () => setAbierto((a) => {
     if (!a && fijo && ref.current) {
       // Se abre hacia donde haya más espacio y nunca se sale de la pantalla
@@ -55,13 +58,13 @@ export function Desplegable({ boton, children, alinear = "izquierda", className 
   useEffect(() => {
     if (!abierto || !fijo) return;
     // Se cierra si se desplaza la página, pero no al desplazarse dentro del propio menú
-    const cerrar = (e) => { if (e?.type === "scroll" && ref.current?.contains(e.target)) return; setAbierto(false); };
+    const cerrar = (e) => { if (e?.type === "scroll" && dentro(e.target)) return; setAbierto(false); };
     window.addEventListener("scroll", cerrar, true); window.addEventListener("resize", cerrar);
     return () => { window.removeEventListener("scroll", cerrar, true); window.removeEventListener("resize", cerrar); };
   }, [abierto, fijo]);
   useEffect(() => {
     if (!abierto) return;
-    const f = (e) => { if (ref.current && !ref.current.contains(e.target)) setAbierto(false); };
+    const f = (e) => { if (!dentro(e.target)) setAbierto(false); };
     const k = (e) => e.key === "Escape" && setAbierto(false);
     document.addEventListener("mousedown", f);
     document.addEventListener("keydown", k);
@@ -70,7 +73,9 @@ export function Desplegable({ boton, children, alinear = "izquierda", className 
   return (
     <div className={`desplegable ${className}`} ref={ref}>
       {boton({ abierto, alternar })}
-      {abierto && <div className={`menu menu-${alinear}`} role="menu" style={fijo && pos ? { ...pos, zIndex: 35 } : undefined}>{children(() => setAbierto(false))}</div>}
+      {abierto && !fijo && <div className={`menu menu-${alinear}`} role="menu">{children(() => setAbierto(false))}</div>}
+      {/* Con "fijo" el menú va sobre toda la página: nada de la tabla lo tapa ni lo recorta */}
+      {abierto && fijo && pos && createPortal(<div ref={refMenu} className={`menu menu-${alinear} menu-flotante`} role="menu" style={{ ...pos, zIndex: 55 }}>{children(() => setAbierto(false))}</div>, document.body)}
     </div>
   );
 }

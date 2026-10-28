@@ -104,7 +104,7 @@ export default function PanelTarea({ tarea, tasks, groups, estados, prioridades,
 
         {puedeEditar && (
           <footer className="pie-panel">
-            <button className="boton peligro" onClick={() => setConfirmar(true)}>Eliminar tarea</button>
+            <button className="boton peligro" onClick={() => setConfirmar(true)}>Eliminar subtarea</button>
           </footer>
         )}
         {confirmar && <Confirmar mensaje={`¿Eliminar "${tarea.title}"?`} detalle={subs.length ? `También se eliminarán sus ${subs.length} subtareas y los comentarios.` : "También se eliminarán sus comentarios."}

@@ -118,7 +118,7 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
           carpetas={carpetas} carpeta={mapaCarpetas[actual.carpeta_id] ?? null} escribe={escribe} />}
         {ruta.tipo === "carpeta" && (ruta.id === SIN || mapaCarpetas[ruta.id]) && (
           <VistaCarpeta key={ruta.id} carpeta={ruta.id === SIN ? { id: SIN, name: "Sin proyecto", color: "#b0b0b4" } : mapaCarpetas[ruta.id]}
-            tareas={tareasDe(ruta.id)} perfil={perfil} escribe={escribe} cargando={cargando} avisar={avisar} ir={ir}
+            carpetas={carpetas} tareas={tareasDe(ruta.id)} perfil={perfil} escribe={escribe} cargando={cargando} avisar={avisar} ir={ir}
             onNueva={() => crearTareaEn(ruta.id)} onBorrada={(id) => { setCarpetas((l) => l.filter((c) => c.id !== id)); setProyectos((l) => l.map((p) => (p.carpeta_id === id ? { ...p, carpeta_id: null } : p))); ir(""); }} />
         )}
         {(ruta.tipo === "inicio" || (ruta.tipo === "usuarios" && !perfil.is_admin)) && (
@@ -165,8 +165,14 @@ function Inicio({ perfil, carpetas, sueltas, tareasDe, cargando, escribe, onNuev
 }
 
 // Pantalla de un proyecto: sus tareas y "+ Crear tarea"
-function VistaCarpeta({ carpeta, tareas, perfil, escribe, cargando, avisar, ir, onNueva, onBorrada }) {
+function VistaCarpeta({ carpeta, carpetas, tareas, perfil, escribe, cargando, avisar, ir, onNueva, onBorrada }) {
   const [borrar, setBorrar] = useState(false);
+  const [editando, setEditando] = useState(null);
+  const [borrando, setBorrando] = useState(null);
+  const eliminarTarea = async (t) => {
+    const { error } = await supabase.from("projects").delete().eq("id", t.id);
+    if (error) avisar(traducirError(error), "error"); else avisar("Tarea eliminada");
+  };
   const [conTareas, setConTareas] = useState(false);
   const real = carpeta.id !== SIN;
   const guardar = async (cambios) => {
@@ -202,16 +208,31 @@ function VistaCarpeta({ carpeta, tareas, perfil, escribe, cargando, avisar, ir, 
       <p className="tenue">{real ? "Elegí una tarea para ver sus subtareas" : "Tareas que todavía no están en ningún proyecto. Desde cada tarea (•••) las podés mover."}</p>
       <div className="tarjetas">
         {tareas.map((p) => (
-          <button key={p.id} className="tarjeta-proyecto" onClick={() => ir(`/p/${p.id}`)} style={{ borderTopColor: p.color }}>
-            <strong>{p.name}</strong>
-            <span className="tenue">{p.description || "Sin descripción"}</span>
-            {p.due_date && <span className={`vence-tarjeta ${diasHasta(p.due_date) <= 1 ? "pronto" : ""}`}>Vence {fechaCorta(p.due_date)}</span>}
-          </button>
+          <div key={p.id} className="tarjeta-envoltura">
+            <button className="tarjeta-proyecto" onClick={() => ir(`/p/${p.id}`)} style={{ borderTopColor: p.color }}>
+              <strong>{p.name}</strong>
+              <span className="tenue">{p.description || "Sin descripción"}</span>
+              {p.due_date && <span className={`vence-tarjeta ${diasHasta(p.due_date) <= 1 ? "pronto" : ""}`}>Vence {fechaCorta(p.due_date)}</span>}
+            </button>
+            {escribe && (
+              <Desplegable fijo className="menu-tarjeta" boton={({ alternar }) => (
+                <button type="button" className="boton icono tres-puntos" onClick={alternar} aria-label={`Opciones de ${p.name}`} title="Opciones">•••</button>
+              )}>
+                {(cerrar) => (<>
+                  <button className="opcion-menu" onClick={() => { cerrar(); setEditando(p); }}>✏️ Editar</button>
+                  <button className="opcion-menu peligro" onClick={() => { cerrar(); setBorrando(p); }}>🗑 Eliminar</button>
+                </>)}
+              </Desplegable>
+            )}
+          </div>
         ))}
         {!cargando && escribe && (
           <button className="tarjeta-proyecto nueva" onClick={onNueva}><strong>+ Crear tarea</strong><span className="tenue">Con subtareas, estados y prioridades listos para usar</span></button>
         )}
       </div>
+      {editando && <EditarTarea tarea={editando} carpetas={carpetas} avisar={avisar} onClose={() => setEditando(null)} />}
+      {borrando && <Confirmar mensaje={`¿Eliminar la tarea "${borrando.name}"?`} detalle="Se borrarán sus subtareas, comentarios y adjuntos para todo el equipo. No se puede deshacer."
+        onNo={() => setBorrando(null)} onSi={() => { const t = borrando; setBorrando(null); eliminarTarea(t); }} />}
       {borrar && <Confirmar mensaje={`¿Eliminar el proyecto "${carpeta.name}"?`}
         detalle={!tareas.length ? "No tiene tareas." : (
           <span className="opciones-borrar" role="radiogroup" aria-label="Qué hacer con sus tareas">
@@ -222,6 +243,42 @@ function VistaCarpeta({ carpeta, tareas, perfil, escribe, cargando, avisar, ir, 
         )}
         onNo={() => setBorrar(false)} onSi={() => { setBorrar(false); eliminar(); }} />}
     </section>
+  );
+}
+
+function EditarTarea({ tarea, carpetas, avisar, onClose }) {
+  const [nombre, setNombre] = useState(tarea.name);
+  const [descripcion, setDescripcion] = useState(tarea.description ?? "");
+  const [vence, setVence] = useState(tarea.due_date ?? "");
+  const [color, setColor] = useState(tarea.color);
+  const [carpeta, setCarpeta] = useState(tarea.carpeta_id ?? "");
+  const [enviando, setEnviando] = useState(false);
+  const guardar = async (e) => {
+    e.preventDefault();
+    if (!nombre.trim()) return;
+    setEnviando(true);
+    const { error } = await supabase.from("projects").update({ name: nombre.trim(), description: descripcion.trim(), due_date: vence || null, color, carpeta_id: carpeta || null }).eq("id", tarea.id);
+    setEnviando(false);
+    if (error) { avisar(traducirError(error), "error"); return; }
+    avisar("Tarea actualizada"); onClose();
+  };
+  return (
+    <Modal titulo="Editar tarea" onClose={onClose}>
+      <form onSubmit={guardar}>
+        <label className="campo" htmlFor="et-nombre"><span>Nombre</span><input id="et-nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={120} autoFocus /></label>
+        <label className="campo" htmlFor="et-desc"><span>Descripción</span><textarea id="et-desc" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={2000} rows={3} /></label>
+        <label className="campo" htmlFor="et-vence"><span>Fecha de vencimiento</span><input id="et-vence" type="date" value={vence} onChange={(e) => setVence(e.target.value)} /></label>
+        <label className="campo" htmlFor="et-carpeta"><span>Proyecto</span><select id="et-carpeta" value={carpeta} onChange={(e) => setCarpeta(e.target.value)}>
+          <option value="">Sin proyecto</option>
+          {carpetas.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select></label>
+        <div className="campo"><span>Color</span><SelectorColor valor={color} onCambiar={setColor} /></div>
+        <div className="acciones">
+          <button type="button" className="boton" onClick={onClose}>Cancelar</button>
+          <button className="boton primario" disabled={!nombre.trim() || enviando}>{enviando ? "Guardando…" : "Guardar"}</button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 

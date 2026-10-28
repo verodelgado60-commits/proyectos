@@ -503,3 +503,14 @@ button.chip-na:hover:not(:disabled) { border-color: var(--primario); color: var(
 .tabla tfoot td { white-space: nowrap; overflow: visible; }
 .agregar-persona { padding: 6px 4px 2px; border-top: 1px solid var(--borde); margin-top: 4px; }
 .agregar-persona input { width: 100%; font-size: 13px; padding: 6px 8px; }
+
+/* Menú ••• en tarjetas de tareas y en filas de subtareas */
+.tarjeta-envoltura { position: relative; display: grid; }
+.tarjeta-envoltura .tarjeta-proyecto { padding-right: 44px; }
+.menu-tarjeta { position: absolute; top: 10px; right: 8px; }
+.tres-puntos { letter-spacing: 1px; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
+.tarjeta-envoltura .tres-puntos { border: 0; background: transparent; }
+.tarjeta-envoltura .tres-puntos:hover, .menu-fila .tres-puntos:hover { background: var(--hover); }
+.menu-fila { flex: none; }
+.menu-fila .tres-puntos { opacity: .45; font-size: 12px; }
+.fila:hover .menu-fila .tres-puntos, .menu-fila .tres-puntos:focus-visible { opacity: 1; }

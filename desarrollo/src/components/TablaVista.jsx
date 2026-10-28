@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { useState } from "react";
 import { COLORES, estaVencida, fechaCorta, ordenar, posicionAlFinal, posicionEntre, progreso, resumenEstados, subtareasDe } from "../lib/logica.js";
 import { Confirmar, Desplegable, ListaEtiqueta, SelectorPersona, TextoEditable } from "./ui.jsx";
@@ -151,6 +152,7 @@ function Fila({ numero, tarea, tasks, puedeEditar, api, estados, prioridades, la
   const [expandida, setExpandida] = useState(false);
   const [sobre, setSobre] = useState(false);
   const [nuevaSub, setNuevaSub] = useState("");
+  const [borrar, setBorrar] = useState(false);
   const subs = esSub ? [] : subtareasDe(tasks, tarea.id);
   const hechas = subs.filter((s) => labels.some((l) => l.id === s.status_id && l.is_done)).length;
   const vencida = estaVencida(tarea, labels);
@@ -192,6 +194,18 @@ function Fila({ numero, tarea, tasks, puedeEditar, api, estados, prioridades, la
               title={tarea.conclusion ? `Conclusión: ${tarea.conclusion}` : "Agregar conclusión (Shift + Enter)"}>📝</button>
           )}
           <button className="abrir" onClick={() => abrir(tarea.id)} aria-label={`Abrir ${tarea.title}`} title="Abrir detalle y comentarios">💬</button>
+          {puedeEditar && (
+            <Desplegable fijo className="menu-fila" boton={({ alternar }) => (
+              <button type="button" className="icono tres-puntos" onClick={alternar} aria-label={`Opciones de ${tarea.title}`} title="Opciones">•••</button>
+            )}>
+              {(cerrar) => (<>
+                <button className="opcion-menu" onClick={() => { cerrar(); abrir(tarea.id); }}>✏️ Editar</button>
+                <button className="opcion-menu peligro" onClick={() => { cerrar(); setBorrar(true); }}>🗑 Eliminar</button>
+              </>)}
+            </Desplegable>
+          )}
+          {borrar && createPortal(<Confirmar mensaje={`¿Eliminar "${tarea.title}"?`} detalle={subs.length ? `También se eliminarán sus ${subs.length} pasos y los comentarios.` : "También se eliminarán sus comentarios y adjuntos."}
+            onNo={() => setBorrar(false)} onSi={() => { setBorrar(false); api.borrarTarea(tarea.id); }} />, document.body)}
         </div>
       </td>
       <td className="centro"><SelectorPersona miembros={personas ?? project_members} perfiles={perfiles} onAgregar={agregarPersona} valor={tarea.assignee_id} editable={puedeEditar} onCambiar={(v) => cambiar({ assignee_id: v })} /></td>
