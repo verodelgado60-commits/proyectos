@@ -85,6 +85,14 @@ with sync_playwright() as pw:
     fondo = lambda i: v.locator("select[aria-label='Estado']").nth(i).locator("..").evaluate("e => getComputedStyle(e).backgroundColor")
     v.wait_for_timeout(800)
     check("colores: Listo verde, En curso amarillo, Stopper rojo", [fondo(0), fondo(1), fondo(2)] == ["rgb(29, 205, 159)", "rgb(255, 190, 0)", "rgb(224, 60, 49)"])
+    # Responsables: Tif, Fer y David además de la cuenta
+    v.locator("tr.fila").nth(0).locator("button[aria-label='Cambiar responsable']").click()
+    nombres = v.locator(".lista-personas .opcion-persona span").all_inner_texts()
+    check("responsables: Verónica, Tif, Fer y David", all(n in nombres for n in ["Verónica Delgado", "Tif", "Fer", "David"]))
+    v.click(".lista-personas .opcion-persona:has-text('Fer')")
+    v.locator("tr.fila").nth(1).locator("button[aria-label='Cambiar responsable']").click()
+    v.fill(".agregar-persona input", "Sofi"); v.keyboard.press("Enter")
+    v.wait_for_selector("tr.fila >> nth=1 >> .avatar[title='Sofi']"); check("se puede agregar otra persona desde la lista", True)
     # Fecha límite N/A
     v.locator("tr.fila").nth(1).locator("button.boton-na").click()
     v.wait_for_selector("tr.fila >> nth=1 >> .chip-na"); check("fecha límite N/A en la subtarea 2", v.locator("tr.fila").nth(1).locator(".chip-na").inner_text() == "N/A")
@@ -128,6 +136,7 @@ with sync_playwright() as pw:
       v.locator("select[aria-label='Prioridad']").nth(0).evaluate("e => e.options[e.selectedIndex].text") == "Alta"
       and v.locator("select[aria-label='Estimación en horas']").nth(0).input_value() == "4"
       and v.locator("tr.fila input[aria-label='Fecha límite']").nth(0).input_value() == "2026-11-15")
+    check("tras recargar: responsables Fer y Sofi guardados", v.locator("tr.fila").nth(0).locator(".avatar[title='Fer']").count() == 1 and v.locator("tr.fila").nth(1).locator(".avatar[title='Sofi']").count() == 1)
     check("tras recargar: N/A y conclusión guardadas", v.locator("tr.fila").nth(1).locator(".chip-na").count() == 1 and v.locator("tr.fila").nth(0).locator(".icono-conclusion.con-nota").count() == 1)
     check("tras recargar: la fecha de creación editada se guardó", v.locator("tr.fila input[aria-label='Fecha de creación']").nth(2).input_value() == "2026-09-15")
     v.screenshot(path=C + "02b_tabla.png", full_page=True)

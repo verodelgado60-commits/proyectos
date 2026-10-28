@@ -147,7 +147,7 @@ export function BarraEstados({ tareas, estados }) {
   );
 }
 
-function Fila({ numero, tarea, tasks, puedeEditar, api, estados, prioridades, labels, project_members, perfiles, abrir, arrastrable, onArrastre, onFinArrastre, onSoltar, esSub = false }) {
+function Fila({ numero, tarea, tasks, puedeEditar, api, estados, prioridades, labels, project_members, personas, agregarPersona, perfiles, abrir, arrastrable, onArrastre, onFinArrastre, onSoltar, esSub = false }) {
   const [expandida, setExpandida] = useState(false);
   const [sobre, setSobre] = useState(false);
   const [nuevaSub, setNuevaSub] = useState("");
@@ -162,7 +162,7 @@ function Fila({ numero, tarea, tasks, puedeEditar, api, estados, prioridades, la
     if (e.key !== "Enter" || !e.shiftKey || !puedeEditar || e.target.tagName === "SELECT") return;
     e.preventDefault(); e.stopPropagation(); setTimeout(() => conclusion.abrir(tarea), 0);
   };
-  const comunes = { tasks, puedeEditar, api, estados, prioridades, labels, project_members, perfiles, abrir };
+  const comunes = { tasks, puedeEditar, api, estados, prioridades, labels, project_members, personas, agregarPersona, perfiles, abrir };
 
   const agregarSub = async (e) => {
     e.preventDefault();
@@ -194,7 +194,7 @@ function Fila({ numero, tarea, tasks, puedeEditar, api, estados, prioridades, la
           <button className="abrir" onClick={() => abrir(tarea.id)} aria-label={`Abrir ${tarea.title}`} title="Abrir detalle y comentarios">💬</button>
         </div>
       </td>
-      <td className="centro"><SelectorPersona miembros={project_members} perfiles={perfiles} valor={tarea.assignee_id} editable={puedeEditar} onCambiar={(v) => cambiar({ assignee_id: v })} /></td>
+      <td className="centro"><SelectorPersona miembros={personas ?? project_members} perfiles={perfiles} onAgregar={agregarPersona} valor={tarea.assignee_id} editable={puedeEditar} onCambiar={(v) => cambiar({ assignee_id: v })} /></td>
       <td className="centro celda-creada">
         {puedeEditar
           ? <input type="date" className="entrada-fecha campo-celda" value={fechaCreacion(tarea)} aria-label="Fecha de creación"

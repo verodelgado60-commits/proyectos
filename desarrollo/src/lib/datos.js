@@ -46,6 +46,40 @@ export function useCarpetas(usuarioId, avisar) {
   return { carpetas, setCarpetas };
 }
 
+// ---------- Responsables sin cuenta (Tif, Fer, David…) ----------
+const INICIALES = [["Tif", "#a63be3"], ["Fer", "#ff7c00"], ["David", "#1dcd9f"]];
+export function useResponsables(puedeEscribir, avisar) {
+  const [responsables, setResponsables] = useState([]);
+  const cargar = useCallback(async () => {
+    const { data, error } = await supabase.from("responsables").select("*").order("created_at");
+    if (error) { avisar?.(traducirError(error), "error"); return; }
+    setResponsables(data);
+    // La primera vez se agregan Tif, Fer y David (si después se borran, no vuelven a aparecer)
+    if (puedeEscribir && !data.length) {
+      const { data: hecho } = await supabase.from("ajustes").select("*").eq("id", "responsables-iniciales");
+      if (!hecho?.length) {
+        await supabase.from("ajustes").insert({ id: "responsables-iniciales", valor: true });
+        const { data: nuevos } = await supabase.from("responsables").insert(INICIALES.map(([name, avatar_color]) => ({ name, avatar_color }))).select();
+        if (nuevos) setResponsables(nuevos);
+      }
+    }
+  }, [puedeEscribir, avisar]);
+  useEffect(() => {
+    cargar();
+    const canal = supabase.channel("responsables")
+      .on("postgres_changes", { event: "*", schema: "public", table: "responsables" }, (ev) => setResponsables((l) => aplicarCambio(l, ev)))
+      .subscribe();
+    return () => { supabase.removeChannel(canal); };
+  }, [cargar]);
+  const agregar = async (name) => {
+    const { data, error } = await supabase.from("responsables").insert({ name, avatar_color: ["#0780ee", "#a63be3", "#ff7c00", "#1dcd9f", "#003ff9", "#ffbe00"][responsables.length % 6] }).select().single();
+    if (error) { avisar?.(traducirError(error), "error"); return null; }
+    setResponsables((l) => aplicarCambio(l, { eventType: "INSERT", new: data }));
+    return data;
+  };
+  return { responsables, agregar };
+}
+
 // ---------- Todo lo de un proyecto, sincronizado en vivo ----------
 const TABLAS = ["groups", "labels", "tasks", "project_members"];
 

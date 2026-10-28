@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { AMARILLO, ESQUEMA, GRIS, ROJO, VERDE } from "../lib/reglas.js";
-import { useProyecto } from "../lib/datos.js";
+import { useProyecto, useResponsables } from "../lib/datos.js";
 import { COLORES, diasHasta, fechaCorta, filtrarTareas, POR_ESTADO_SIN, posicionAlFinal, progreso } from "../lib/logica.js";
 import { Confirmar, Desplegable, TextoEditable } from "./ui.jsx";
 import TablaVista from "./TablaVista.jsx";
@@ -30,6 +30,10 @@ export default function Proyecto({ proyecto, perfil, avisar, cambioLocal , carpe
   const miRol = perfil.rol === "lector" ? "viewer" : perfil.rol === "admin" ? "owner" : d.project_members.find((m) => m.user_id === perfil.id)?.role ?? "viewer";
   const puedeEditar = miRol === "owner" || miRol === "editor";
   const esDueno = miRol === "owner";
+  // Responsables: personas del equipo (con cuenta) + responsables sin cuenta (Tif, Fer, David…)
+  const externos = useResponsables(["admin", "editor"].includes(perfil.rol), avisar);
+  const perfilesTodos = useMemo(() => ({ ...d.perfiles, ...Object.fromEntries(externos.responsables.map((r) => [r.id, { id: r.id, full_name: r.name, username: r.name, avatar_color: r.avatar_color, externo: true }])) }), [d.perfiles, externos.responsables]);
+  const personas = useMemo(() => [...d.project_members.map((m) => ({ user_id: m.user_id })), ...externos.responsables.map((r) => ({ user_id: r.id }))], [d.project_members, externos.responsables]);
   const estados = d.labels.filter((l) => l.kind === "status");
   const prioridades = d.labels.filter((l) => l.kind === "priority");
   const visibles = useMemo(() => filtrarTareas(d.tasks, filtros), [d.tasks, filtros]);
@@ -62,7 +66,7 @@ export default function Proyecto({ proyecto, perfil, avisar, cambioLocal , carpe
     actualizarProyecto({ esquema: ESQUEMA });
   }, [d.cargando, puedeEditar, proyecto.esquema]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const props = { ...d, estados, prioridades, visibles, puedeEditar, perfil, abrir: setAbierta, avisar };
+  const props = { ...d, perfiles: perfilesTodos, personas, agregarPersona: ["admin", "editor"].includes(perfil.rol) ? externos.agregar : null, estados, prioridades, visibles, puedeEditar, perfil, abrir: setAbierta, avisar };
 
   return (
     <section className="proyecto">
@@ -99,7 +103,7 @@ export default function Proyecto({ proyecto, perfil, avisar, cambioLocal , carpe
           <select value={filtros.responsable} onChange={(e) => setFiltros({ ...filtros, responsable: e.target.value })} aria-label="Filtrar por responsable">
             <option value="">Personas</option>
             <option value="nadie">Sin responsable</option>
-            {d.project_members.map((m) => d.perfiles[m.user_id] && <option key={m.user_id} value={m.user_id}>{d.perfiles[m.user_id].full_name || d.perfiles[m.user_id].username}</option>)}
+            {personas.map((m) => perfilesTodos[m.user_id] && <option key={m.user_id} value={m.user_id}>{perfilesTodos[m.user_id].full_name || perfilesTodos[m.user_id].username}</option>)}
           </select>
           <select value={filtros.estado} onChange={(e) => setFiltros({ ...filtros, estado: e.target.value })} aria-label="Filtrar por estado">
             <option value="">Estados</option>

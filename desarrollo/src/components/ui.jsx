@@ -35,9 +35,25 @@ export function Modal({ titulo, onClose, children, ancho = 480 }) {
 }
 
 // Menú desplegable anclado a un botón; se cierra al hacer clic fuera
-export function Desplegable({ boton, children, alinear = "izquierda", className = "" }) {
+// "fijo": el menú se dibuja sobre la página (no lo recorta la tabla) y se abre hacia arriba si no cabe abajo
+export function Desplegable({ boton, children, alinear = "izquierda", className = "", fijo = false }) {
   const [abierto, setAbierto] = useState(false);
+  const [pos, setPos] = useState(null);
   const ref = useRef(null);
+  const alternar = () => setAbierto((a) => {
+    if (!a && fijo && ref.current) {
+      const r = ref.current.getBoundingClientRect();
+      const cabeAbajo = window.innerHeight - r.bottom > 400 || r.top < window.innerHeight / 2;
+      setPos({ position: "fixed", left: Math.max(8, Math.min(r.left, window.innerWidth - 240)), ...(cabeAbajo ? { top: r.bottom + 4 } : { bottom: window.innerHeight - r.top + 4 }), right: "auto" });
+    }
+    return !a;
+  });
+  useEffect(() => {
+    if (!abierto || !fijo) return;
+    const cerrar = () => setAbierto(false);
+    window.addEventListener("scroll", cerrar, true); window.addEventListener("resize", cerrar);
+    return () => { window.removeEventListener("scroll", cerrar, true); window.removeEventListener("resize", cerrar); };
+  }, [abierto, fijo]);
   useEffect(() => {
     if (!abierto) return;
     const f = (e) => { if (ref.current && !ref.current.contains(e.target)) setAbierto(false); };
@@ -48,8 +64,8 @@ export function Desplegable({ boton, children, alinear = "izquierda", className 
   }, [abierto]);
   return (
     <div className={`desplegable ${className}`} ref={ref}>
-      {boton({ abierto, alternar: () => setAbierto((a) => !a) })}
-      {abierto && <div className={`menu menu-${alinear}`} role="menu">{children(() => setAbierto(false))}</div>}
+      {boton({ abierto, alternar })}
+      {abierto && <div className={`menu menu-${alinear}`} role="menu" style={fijo && pos ? { ...pos, zIndex: 35 } : undefined}>{children(() => setAbierto(false))}</div>}
     </div>
   );
 }
@@ -78,11 +94,12 @@ export function CeldaEtiqueta({ etiquetas, valor, onCambiar, editable, vacio = "
   );
 }
 
-export function SelectorPersona({ miembros, perfiles, valor, onCambiar, editable }) {
+export function SelectorPersona({ miembros, perfiles, valor, onCambiar, editable, onAgregar }) {
   const actual = valor ? perfiles[valor] : null;
+  const [nombre, setNombre] = useState("");
   if (!editable) return <Avatar perfil={actual} />;
   return (
-    <Desplegable boton={({ alternar }) => (
+    <Desplegable fijo boton={({ alternar }) => (
       <button type="button" className="boton-avatar" onClick={alternar} aria-label="Cambiar responsable"><Avatar perfil={actual} /></button>
     )}>
       {(cerrar) => (
@@ -97,6 +114,15 @@ export function SelectorPersona({ miembros, perfiles, valor, onCambiar, editable
             );
           })}
           <button type="button" className="opcion-persona" onClick={() => { onCambiar(null); cerrar(); }}><Avatar perfil={null} size={24} /> <span>Sin responsable</span></button>
+          {onAgregar && (
+            <form className="agregar-persona" onSubmit={async (e) => {
+              e.preventDefault(); const n = nombre.trim(); if (!n) return;
+              const nueva = await onAgregar(n); setNombre("");
+              if (nueva) { onCambiar(nueva.id); cerrar(); }
+            }}>
+              <input value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={40} placeholder="+ Agregar persona" aria-label="Agregar persona responsable" />
+            </form>
+          )}
         </div>
       )}
     </Desplegable>

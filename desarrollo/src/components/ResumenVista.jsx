@@ -2,13 +2,13 @@ import { estaVencida, fechaCorta, progreso, tareasPrincipales } from "../lib/log
 import { Avatar } from "./ui.jsx";
 import { BarraEstados } from "./TablaVista.jsx";
 
-export default function ResumenVista({ visibles, groups, estados, labels, perfiles, project_members, abrir }) {
+export default function ResumenVista({ visibles, groups, estados, labels, perfiles, project_members, personas, abrir }) {
   const prog = progreso(visibles, labels);
   const vencidas = visibles.filter((t) => estaVencida(t, labels));
   const atascadas = visibles.filter((t) => /atasc|stopper|stuck|bloque/i.test(labels.find((l) => l.id === t.status_id)?.name ?? ""));
   const totalEst = visibles.reduce((a, t) => a + (Number(t.estimation) || 0), 0);
 
-  const porPersona = project_members.map((m) => ({
+  const porPersona = (personas ?? project_members).map((m) => ({
     perfil: perfiles[m.user_id],
     tareas: visibles.filter((t) => t.assignee_id === m.user_id),
   })).filter((x) => x.perfil);

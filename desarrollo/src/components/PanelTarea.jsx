@@ -6,7 +6,7 @@ import { Avatar, CeldaEtiqueta, Confirmar, SelectorPersona, TextoEditable } from
 import { AvisoStopper, useStopper } from "./Stopper.jsx";
 import { BloqueConclusion, useConclusion } from "./Conclusion.jsx";
 
-export default function PanelTarea({ tarea, tasks, groups, estados, prioridades, labels, project_members, perfiles, puedeEditar, esDueno, perfil, api, abrir, avisar, onClose }) {
+export default function PanelTarea({ tarea, tasks, groups, estados, prioridades, labels, project_members, personas, agregarPersona, perfiles, puedeEditar, esDueno, perfil, api, abrir, avisar, onClose }) {
   const [descripcion, setDescripcion] = useState(tarea.description ?? "");
   const [nuevaSub, setNuevaSub] = useState("");
   const [confirmar, setConfirmar] = useState(false);
@@ -53,7 +53,7 @@ export default function PanelTarea({ tarea, tasks, groups, estados, prioridades,
           <dt>Estado</dt><dd><CeldaEtiqueta etiquetas={estados} valor={tarea.status_id} editable={puedeEditar} onCambiar={(v) => cambiar({ status_id: v })} /></dd>
           <dt>Prioridad</dt><dd><CeldaEtiqueta etiquetas={prioridades} valor={tarea.priority_id} editable={puedeEditar} onCambiar={(v) => cambiar({ priority_id: v })} /></dd>
           <dt>Responsable</dt><dd className="con-nombre">
-            <SelectorPersona miembros={project_members} perfiles={perfiles} valor={tarea.assignee_id} editable={puedeEditar} onCambiar={(v) => cambiar({ assignee_id: v })} />
+            <SelectorPersona miembros={personas ?? project_members} perfiles={perfiles} onAgregar={agregarPersona} valor={tarea.assignee_id} editable={puedeEditar} onCambiar={(v) => cambiar({ assignee_id: v })} />
             <span>{tarea.assignee_id ? (perfiles[tarea.assignee_id]?.full_name || perfiles[tarea.assignee_id]?.username) : <span className="tenue">Sin asignar</span>}</span>
           </dd>
           <dt>Inicio</dt><dd><input type="date" disabled={!puedeEditar} value={tarea.start_date ?? ""} max={tarea.due_date ?? undefined}

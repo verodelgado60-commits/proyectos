@@ -37,6 +37,12 @@ export const reglas = {
   insertar(tabla, fila, ctx) {
     const yo = ctx.sesion.user.id;
     // Proyectos (carpetas) que agrupan tareas: IA, IVR, Pre2post…
+    // Responsables sin cuenta (Tif, Fer, David…) y ajustes generales
+    if (tabla === "responsables" || tabla === "ajustes") {
+      if (!escribeGlobal(ctx)) error("No tenés permiso para hacer este cambio.");
+      if (tabla === "responsables" && !String(fila.name ?? "").trim()) error("Escribí un nombre.");
+      return { ...fila, ...(tabla === "responsables" ? { name: String(fila.name).trim().slice(0, 40) } : {}), created_by: yo, created_at: ahora() };
+    }
     if (tabla === "carpetas") {
       if (!escribeGlobal(ctx)) error("No tenés permiso para crear proyectos.");
       if (!fila.name?.trim()) error("El proyecto necesita un nombre.");
@@ -81,6 +87,10 @@ export const reglas = {
   },
 
   actualizar(tabla, fila, cambios, ctx) {
+    if (tabla === "responsables" || tabla === "ajustes") {
+      if (!escribeGlobal(ctx)) error("No tenés permiso para hacer este cambio.");
+      const c = { ...cambios }; delete c.id; delete c.created_by; delete c.created_at; return c;
+    }
     if (tabla === "carpetas") {
       if (!escribeGlobal(ctx)) error("No tenés permiso para editar proyectos.");
       const c = { ...cambios }; delete c.id; delete c.created_by; delete c.created_at;
@@ -110,6 +120,11 @@ export const reglas = {
 
   borrar(tabla, fila, ctx) {
     const tareas = ctx.tablas.tasks ?? [];
+    if (tabla === "responsables" || tabla === "ajustes") {
+      if (!escribeGlobal(ctx)) error("No tenés permiso para hacer este cambio.");
+      if (tabla === "responsables") ctx.extra.push({ t: "update", tabla: "tasks", filtros: [["assignee_id", "eq", fila.id]], cambios: { assignee_id: null } });
+      return;
+    }
     if (tabla === "carpetas") {
       if (!escribeGlobal(ctx)) error("No tenés permiso para eliminar proyectos.");
       // Sus tareas no se borran: quedan en "Sin proyecto"
