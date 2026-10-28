@@ -42,15 +42,20 @@ export function Desplegable({ boton, children, alinear = "izquierda", className 
   const ref = useRef(null);
   const alternar = () => setAbierto((a) => {
     if (!a && fijo && ref.current) {
+      // Se abre hacia donde haya más espacio y nunca se sale de la pantalla
       const r = ref.current.getBoundingClientRect();
-      const cabeAbajo = window.innerHeight - r.bottom > 400 || r.top < window.innerHeight / 2;
-      setPos({ position: "fixed", left: Math.max(8, Math.min(r.left, window.innerWidth - 240)), ...(cabeAbajo ? { top: r.bottom + 4 } : { bottom: window.innerHeight - r.top + 4 }), right: "auto" });
+      const abajo = window.innerHeight - r.bottom - 12, arriba = r.top - 12;
+      const haciaAbajo = abajo >= 300 || abajo >= arriba;
+      setPos({ position: "fixed", left: Math.max(8, Math.min(r.left, window.innerWidth - 240)), right: "auto",
+        ...(haciaAbajo ? { top: r.bottom + 4, bottom: "auto" } : { top: "auto", bottom: window.innerHeight - r.top + 4 }),
+        "--alto-max": `${Math.max(160, Math.floor(haciaAbajo ? abajo : arriba) - 16)}px` });
     }
     return !a;
   });
   useEffect(() => {
     if (!abierto || !fijo) return;
-    const cerrar = () => setAbierto(false);
+    // Se cierra si se desplaza la página, pero no al desplazarse dentro del propio menú
+    const cerrar = (e) => { if (e?.type === "scroll" && ref.current?.contains(e.target)) return; setAbierto(false); };
     window.addEventListener("scroll", cerrar, true); window.addEventListener("resize", cerrar);
     return () => { window.removeEventListener("scroll", cerrar, true); window.removeEventListener("resize", cerrar); };
   }, [abierto, fijo]);

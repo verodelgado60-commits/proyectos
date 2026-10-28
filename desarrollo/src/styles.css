@@ -218,7 +218,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .selector-etiquetas { display: grid; gap: 6px; width: 180px; }
 .opcion-etiqueta { border: 0; border-radius: 4px; padding: 8px; font-weight: 500; }
 .opcion-etiqueta:hover { filter: brightness(.93); }
-.lista-personas { display: grid; gap: 2px; max-height: min(380px, 70vh); overflow-y: auto; min-width: 210px; }
+.lista-personas { display: grid; gap: 2px; max-height: min(380px, var(--alto-max, 70vh)); overflow-y: auto; min-width: 210px; }
 .opcion-persona { display: flex; align-items: center; gap: 8px; border: 0; background: transparent; padding: 6px 8px; border-radius: 5px; text-align: left; }
 .opcion-persona:hover, .opcion-persona.activa { background: var(--hover); }
 .boton-avatar { border: 0; background: transparent; padding: 2px; border-radius: 50%; }
