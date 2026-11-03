@@ -1,0 +1,35 @@
+name: Recordatorio por WhatsApp
+
+on:
+  schedule:
+    - cron: "17 13 * * *"   # todos los días 7:17 a. m. hora de Costa Rica (13:17 UTC)
+  workflow_dispatch: {}      # botón "Run workflow" para probarlo cuando quieras
+
+permissions:
+  contents: read
+
+concurrency:
+  group: avisos-whatsapp
+  cancel-in-progress: false
+
+jobs:
+  avisar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Enviar recordatorio
+        run: node desarrollo/scripts/avisos-whatsapp.mjs
+        env:
+          AVISOS_USUARIO: ${{ secrets.AVISOS_USUARIO }}
+          AVISOS_CLAVE: ${{ secrets.AVISOS_CLAVE }}
+          AVISOS_NOMBRE: ${{ vars.AVISOS_NOMBRE }}
+          WA_TOKEN: ${{ secrets.WA_TOKEN }}
+          WA_PHONE_ID: ${{ secrets.WA_PHONE_ID }}
+          WA_DESTINO: ${{ secrets.WA_DESTINO }}
+          WA_PLANTILLA: ${{ vars.WA_PLANTILLA }}
+          WA_IDIOMA: ${{ vars.WA_IDIOMA }}
+          WA_VERSION: ${{ vars.WA_VERSION }}

@@ -27,3 +27,5 @@ jobs:
         run: npm run prueba:ghdb
       - name: La app compila
         run: npx vite build
+      - name: Recordatorio por WhatsApp (contra WhatsApp simulado)
+        run: node pruebas/avisos.prueba.mjs

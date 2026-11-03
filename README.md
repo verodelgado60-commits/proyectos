@@ -41,3 +41,22 @@ npm test               # lógica y reglas
 npm run prueba:ghdb    # ghdb.js contra un GitHub simulado
 npm run publicar       # compila y copia el sitio a la raíz con ?v= nuevo
 ```
+
+## Recordatorio diario por WhatsApp (API oficial de Meta)
+Todos los días a las 7:17 a. m. (hora de Costa Rica), GitHub Actions (`.github/workflows/avisos-whatsapp.yml`) entra con una cuenta de solo lectura, descifra los datos en el momento y envía **un** WhatsApp con las tareas y subtareas que vencen hoy o mañana. Si no vence nada, no envía. En el registro público de Actions nunca se escriben nombres de tareas.
+
+**Secrets** (Settings → Secrets and variables → Actions → *New repository secret*):
+
+| Nombre | Qué es |
+|---|---|
+| `AVISOS_USUARIO` / `AVISOS_CLAVE` | Una cuenta con rol **Lector** creada en «Usuarios y permisos» solo para esto |
+| `WA_TOKEN` | Token permanente (usuario del sistema) de la app de Meta con permiso `whatsapp_business_messaging` |
+| `WA_PHONE_ID` | *Phone number ID* del número de WhatsApp Business (en WhatsApp → API Setup) |
+| `WA_DESTINO` | Tu número con código de país, sin + (ej. `50688887777`) |
+
+Opcionales como **Variables**: `WA_PLANTILLA` (por defecto `recordatorio_vencimiento`), `WA_IDIOMA` (`es`), `WA_VERSION` (`v23.0`), `AVISOS_NOMBRE` (`Vero`).
+
+La plantilla (categoría **Utilidad**, idioma español) debe estar aprobada por Meta con dos variables, por ejemplo:
+> Hola {{1}}, tenés pendientes por vencer: {{2}}. Revisalos en tu plataforma de proyectos.
+
+Para probarlo: Actions → «Recordatorio por WhatsApp» → *Run workflow*.
