@@ -173,7 +173,9 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
 
 const SIN = "sin-proyecto";
 // Segmento de cada tarea (línea de negocio)
-export const SEGMENTOS = [{ id: "movil", nombre: "Móvil", color: "#0780ee" }, { id: "hogar", nombre: "Hogar", color: "#ff7c00" }];
+export const SEGMENTOS = [{ id: "movil", nombre: "Móvil", color: "#0780ee" }, { id: "hogar", nombre: "Hogar", color: "#ff7c00" }, { id: "ambos", nombre: "Ambos", color: "#a63be3" }];
+// Las tareas de "Ambos" también aparecen al filtrar por Móvil o por Hogar
+const entraEnSegmento = (t, seg) => !seg || t.segmento === seg || (t.segmento === "ambos" && (seg === "movil" || seg === "hogar"));
 const segmentoDe = (id) => SEGMENTOS.find((x) => x.id === id);
 function SelectorSegmento({ valor, onCambiar, id }) {
   return (
@@ -224,9 +226,9 @@ function VistaCarpeta({ carpeta, carpetas, tareas, archivadas = [], perfil, escr
   const [segmento, setSegmento] = useState(() => { try { return localStorage.getItem("segmento-vista") || ""; } catch { return ""; } });
   const elegirSegmento = (v) => { setSegmento(v); try { localStorage.setItem("segmento-vista", v); } catch { /* opcional */ } };
   // Ordenadas por fecha de vencimiento (las sin fecha al final)
-  const mostradas = tareas.filter((t) => !segmento || t.segmento === segmento)
+  const mostradas = tareas.filter((t) => entraEnSegmento(t, segmento))
     .sort((a, b) => (a.due_date ?? "9999").localeCompare(b.due_date ?? "9999") || a.name.localeCompare(b.name));
-  const cuantas = (id) => tareas.filter((t) => (id ? t.segmento === id : true)).length;
+  const cuantas = (id) => tareas.filter((t) => entraEnSegmento(t, id)).length;
   const archivar = async (t, valor) => {
     const { error } = await supabase.from("projects").update({ archivada: valor }).eq("id", t.id);
     if (error) avisar(traducirError(error), "error"); else avisar(valor ? `«${t.name}» archivada` : `«${t.name}» volvió a la lista`);

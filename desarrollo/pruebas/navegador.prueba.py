@@ -244,17 +244,19 @@ with sync_playwright() as pw:
     print("Segmento y orden")
     v.click("button.nav-item:has-text('Inicio')"); v.wait_for_selector("text=Acá están tus últimos proyectos"); check("Inicio: «Acá están tus últimos proyectos»", True)
     v.click("button.nav-carpeta:has-text('IA')"); v.wait_for_selector(".vista-carpeta h1:has-text('IA')")
-    for nombre, seg, fecha in [("Hogar tardía", "Hogar", "2026-12-20"), ("Móvil pronta", "Móvil", "2026-11-10")]:
+    for nombre, seg, fecha in [("Hogar tardía", "Hogar", "2026-12-20"), ("Móvil pronta", "Móvil", "2026-11-10"), ("De los dos", "Ambos", "2026-12-25")]:
         v.click(".vista-carpeta button:has-text('+ Crear tarea')"); v.fill("#nt-nombre", nombre)
         v.click(f".modal .opcion-segmento:has-text('{seg}')"); v.fill("#np-vence", fecha); v.click(".modal button:has-text('Crear tarea')")
         v.wait_for_selector(f"h1:has-text('{nombre}')"); v.click(".migas-proyecto a"); v.wait_for_selector(".vista-carpeta h1:has-text('IA')")
     v.wait_for_selector(".tarjeta-envoltura:has-text('Móvil pronta')")
-    orden = [t.split("\n")[0] if not t.startswith(("Móvil\n", "Hogar\n")) else t.split("\n")[1] for t in v.locator(".vista-carpeta .tarjeta-envoltura .tarjeta-proyecto").all_inner_texts()]
+    orden = v.locator(".vista-carpeta .tarjeta-envoltura strong").all_inner_texts()
     print("    orden:", orden)
-    check("tareas ordenadas por fecha de vencimiento", orden[:3] == ["Móvil pronta", "Hogar tardía", "Q3 Proyecto Alpha"])
+    check("tareas ordenadas por fecha de vencimiento", orden[:4] == ["Móvil pronta", "Hogar tardía", "De los dos", "Q3 Proyecto Alpha"])
     check("la tarjeta muestra el segmento", v.locator(".tarjeta-envoltura:has-text('Hogar tardía') .chip-segmento").inner_text() == "Hogar")
     v.click(".pestana-segmento:has-text('Hogar')")
-    check("filtro Hogar", [t for t in v.locator(".vista-carpeta .tarjeta-envoltura strong").all_inner_texts()] == ["Hogar tardía"])
+    check("filtro Hogar (incluye las de Ambos)", v.locator(".vista-carpeta .tarjeta-envoltura strong").all_inner_texts() == ["Hogar tardía", "De los dos"])
+    v.click(".pestana-segmento:has-text('Ambos')")
+    check("filtro Ambos", v.locator(".vista-carpeta .tarjeta-envoltura strong").all_inner_texts() == ["De los dos"] and v.locator(".tarjeta-envoltura .chip-segmento").inner_text() == "Ambos")
     v.screenshot(path=C + "02j_segmento.png")
     v.click(".pestana-segmento:has-text('Todas')")
     print("••• en tareas")
