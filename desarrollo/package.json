@@ -7,8 +7,7 @@
     "dev": "vite",
     "test": "vitest run",
     "prueba:ghdb": "node pruebas/ghdb.prueba.mjs",
-    "publicar": "node scripts/publicar.mjs",
-    "prueba:avisos": "node pruebas/avisos.prueba.mjs"
+    "publicar": "node scripts/publicar.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
