@@ -61,64 +61,6 @@ export function useDashes(perfil, avisar) {
   return { grupos, dashes, escribe, api };
 }
 
-// Sección del menú, igual a "Mis proyectos"
-export function MenuDashes({ datos, ruta, ir, onNuevoGrupo }) {
-  const { grupos, dashes, escribe } = datos;
-  const [manual, setManual] = useState({});
-  const dashActual = ruta.tipo === "dash" ? dashes.find((d) => d.id === ruta.id) : null;
-  const grupoActual = ruta.tipo === "dash-grupo" ? ruta.id : dashActual?.grupo_id ?? null;
-  const expandido = (id) => manual[id] ?? grupoActual === id;
-  return (<>
-    <div className="titulo-seccion-nav">
-      <h3 className="nav-titulo">Mis dash</h3>
-      {escribe && <button type="button" className="mas-seccion" onClick={onNuevoGrupo} aria-label="Nuevo grupo de dash" title="Nuevo grupo de dash">+</button>}
-    </div>
-    {!grupos.length && <p className="tenue pequeno">Aún no tenés dash.</p>}
-    {grupos.map((g) => {
-      const abierto = expandido(g.id);
-      const lista = dashes.filter((d) => d.grupo_id === g.id);
-      return (
-        <div key={g.id} className="grupo-nav">
-          <div className="fila-carpeta">
-            <button type="button" className="flecha-nav" onClick={() => setManual((m) => ({ ...m, [g.id]: !abierto }))} aria-expanded={abierto}
-              aria-label={`${abierto ? "Cerrar" : "Abrir"} ${g.name}`} title={abierto ? "Cerrar" : "Abrir"}>{abierto ? "▾" : "▸"}</button>
-            <button className={`nav-item nav-carpeta nav-dash-grupo ${ruta.tipo === "dash-grupo" && ruta.id === g.id ? "activo" : ""}`}
-              onClick={() => { setManual((m) => ({ ...m, [g.id]: true })); ir(`/dg/${g.id}`); }}>
-              <i className="punto" style={{ background: g.color }} /> <span className="corta">{g.name}</span>
-              <small className="tenue">{lista.length}</small>
-            </button>
-          </div>
-          {abierto && (
-            <div className="subnav">
-              {lista.map((d) => (
-                <button key={d.id} className={`nav-item nav-tarea nav-dash ${dashActual?.id === d.id ? "activo" : ""}`} onClick={() => ir(`/d/${d.id}`)}>
-                  <span className="corta">📊 {d.name}</span>
-                </button>
-              ))}
-              {escribe && <CrearDashEnLinea grupo={g} datos={datos} ir={ir} />}
-            </div>
-          )}
-        </div>
-      );
-    })}
-  </>);
-}
-
-function CrearDashEnLinea({ grupo, datos, ir }) {
-  const [abierto, setAbierto] = useState(false);
-  const [nombre, setNombre] = useState("");
-  if (!abierto) return <button className="nav-item nav-tarea nav-crear" onClick={() => setAbierto(true)}>+ Crear dash</button>;
-  return (
-    <form className="crear-dash-linea" onSubmit={async (e) => {
-      e.preventDefault(); const n = nombre.trim(); if (!n) return;
-      const d = await datos.api.crearDash(grupo.id, n); setNombre(""); setAbierto(false); if (d) ir(`/d/${d.id}`);
-    }}>
-      <input autoFocus value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={80} placeholder="Nombre del dash" aria-label={`Nombre del dash nuevo en ${grupo.name}`}
-        onKeyDown={(e) => { if (e.key === "Escape") { setAbierto(false); setNombre(""); } }} onBlur={() => { if (!nombre.trim()) setAbierto(false); }} />
-    </form>
-  );
-}
-
 export function NuevoGrupoDash({ datos, onClose, ir }) {
   const [nombre, setNombre] = useState("");
   const [color, setColor] = useState(COLORES[datos.grupos.length % COLORES.length]);
@@ -204,7 +146,6 @@ export function VistaDash({ dash, grupo, datos, ir }) {
   const [borrar, setBorrar] = useState(false);
   return (
     <section className="inicio vista-dash">
-      <nav className="migas-proyecto" aria-label="Ubicación"><a href={`#/dg/${grupo?.id ?? ""}`}>← {grupo?.name ?? "Mis dash"}</a></nav>
       <div className="titulo-carpeta">
         <h1>📊 <TextoEditable valor={dash.name} editable={escribe} max={80} onGuardar={(name) => api.actualizar("dashes", dash.id, { name })} /></h1>
         <span className="empuje" />

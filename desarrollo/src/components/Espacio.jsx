@@ -10,7 +10,7 @@ import CambiarClave from "./CambiarClave.jsx";
 import ActualizarToken from "./ActualizarToken.jsx";
 import MiDia from "./MiDia.jsx";
 import Buscador from "./Buscador.jsx";
-import { ListaGruposDash, MenuDashes, NuevoGrupoDash, useDashes, VistaDash, VistaGrupoDash } from "./Dashes.jsx";
+import { ListaGruposDash, NuevoGrupoDash, useDashes, VistaDash, VistaGrupoDash } from "./Dashes.jsx";
 import AvisoHoy from "./AvisoHoy.jsx";
 import { EstadoGuardado } from "./Sistema.jsx";
 import Notificaciones from "./Notificaciones.jsx";
@@ -72,6 +72,15 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
   const [nuevaCarpeta, setNuevaCarpeta] = useState(false);
   const datosDash = useDashes(perfil, avisar);
   const [nuevoGrupoDash, setNuevoGrupoDash] = useState(false);
+  // Flechita para volver: a la pantalla de arriba de donde estás
+  const volver = (() => {
+    if (ruta.tipo === "proyecto" && actual) { const c = mapaCarpetas[actual.carpeta_id]; return c ? { a: `/c/${c.id}`, nombre: c.name } : { a: `/c/${SIN}`, nombre: "Sin proyecto" }; }
+    if (ruta.tipo === "carpeta") return { a: "/proyectos", nombre: "Proyectos" };
+    if (ruta.tipo === "dash") { const d = datosDash?.dashes.find((x) => x.id === ruta.id); const g = d && datosDash.grupos.find((x) => x.id === d.grupo_id); return g ? { a: `/dg/${g.id}`, nombre: g.name } : { a: "/dash", nombre: "Dash" }; }
+    if (ruta.tipo === "dash-grupo") return { a: "/dash", nombre: "Dash" };
+    if (ruta.tipo === "inicio") return null;
+    return { a: "", nombre: "Inicio" };
+  })();
   const [busqueda, setBusqueda] = useState(() => (leerRuta().tipo === "buscar" ? leerRuta().q : ""));
   const refBuscar = useRef(null);
   const buscar = (t) => { setBusqueda(t); window.location.hash = t.trim() ? `/buscar/${encodeURIComponent(t)}` : (ruta.tipo === "buscar" ? "" : window.location.hash); };
@@ -81,10 +90,6 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
     const k = (e) => { if (e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName ?? "") && !document.activeElement?.isContentEditable) { e.preventDefault(); setMenuMovil(true); refBuscar.current?.focus(); } };
     window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
   }, []);
-  // Flechitas del menú: cada proyecto se puede abrir o cerrar a mano
-  const [manual, setManual] = useState({});
-  const expandida = (id) => manual[id] ?? carpetaAbierta === id;
-  const alternarCarpeta = (id) => setManual((m) => ({ ...m, [id]: !expandida(id) }));
   const crearTareaEn = (cid) => setNuevo({ carpeta: cid === SIN ? null : cid });
 
   useEffect(() => {
@@ -96,44 +101,14 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
       <aside className="barra-lateral" aria-label="Navegación">
         <div className="marca"><span>Proyectos</span></div>
         {escribe && <button className="boton primario ancho" onClick={() => setNuevaCarpeta(true)}>+ Nuevo proyecto</button>}
+        <div className="buscador-menu" role="search">
+          <input ref={refBuscar} type="search" value={busqueda} onChange={(e) => buscar(e.target.value)} placeholder="🔍 Buscar…  ( / )" aria-label="Buscar en todo" maxLength={80}
+            onKeyDown={(e) => { if (e.key === "Escape") { buscar(""); e.currentTarget.blur(); } }} />
+        </div>
         <nav>
           <button className={`nav-item ${ruta.tipo === "inicio" ? "activo" : ""}`} onClick={() => ir("")}>🏠 Inicio</button>
           <button className={`nav-item ${ruta.tipo === "hoy" ? "activo" : ""}`} onClick={() => ir("/hoy")}>☀️ Mi día</button>
           {perfil.is_admin && <button className={`nav-item ${ruta.tipo === "usuarios" ? "activo" : ""}`} onClick={() => ir("/usuarios")}>👥 Usuarios y permisos</button>}
-          <h3 className="nav-titulo">Mis proyectos</h3>
-          <div className="buscador-menu" role="search">
-            <input ref={refBuscar} type="search" value={busqueda} onChange={(e) => buscar(e.target.value)} placeholder="🔍 Buscar…  ( / )" aria-label="Buscar en todo" maxLength={80}
-              onKeyDown={(e) => { if (e.key === "Escape") { buscar(""); e.currentTarget.blur(); } }} />
-          </div>
-          {cargando && <p className="tenue pequeno">Cargando…</p>}
-          {!cargando && !carpetas.length && !sueltas.length && <p className="tenue pequeno">Aún no tenés proyectos.</p>}
-          {[...carpetas, ...(sueltas.length ? [{ id: SIN, name: "Sin proyecto", color: "#b0b0b4" }] : [])].map((c) => {
-            const abierta = expandida(c.id);
-            return (
-              <div key={c.id} className="grupo-nav">
-                <div className="fila-carpeta">
-                  <button type="button" className="flecha-nav" onClick={() => alternarCarpeta(c.id)} aria-expanded={abierta}
-                    aria-label={`${abierta ? "Cerrar" : "Abrir"} ${c.name}`} title={abierta ? "Cerrar" : "Abrir"}>{abierta ? "▾" : "▸"}</button>
-                  <button className={`nav-item nav-carpeta ${ruta.tipo === "carpeta" && carpetaAbierta === c.id ? "activo" : ""}`}
-                    onClick={() => { setManual((m) => ({ ...m, [c.id]: true })); ir(`/c/${c.id}`); }}>
-                    <i className="punto" style={{ background: c.color }} /> <span className="corta">{c.name}</span>
-                    <small className="tenue">{tareasDe(c.id).length}</small>
-                  </button>
-                </div>
-                {abierta && (
-                  <div className="subnav">
-                    {tareasDe(c.id).map((p) => (
-                      <button key={p.id} className={`nav-item nav-tarea ${actual?.id === p.id ? "activo" : ""}`} onClick={() => ir(`/p/${p.id}`)}>
-                        <span className="corta">{p.name}</span>
-                      </button>
-                    ))}
-                    {escribe && <button className="nav-item nav-tarea nav-crear" onClick={() => crearTareaEn(c.id)}>+ Crear tarea</button>}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-          <MenuDashes datos={datosDash} ruta={ruta} ir={ir} onNuevoGrupo={() => setNuevoGrupoDash(true)} />
         </nav>
         <Desplegable alinear="arriba" className="cuenta" boton={({ alternar }) => (
           <button className="nav-item" onClick={alternar}><Avatar perfil={perfil} size={26} /> <span className="corta">{perfil.full_name || perfil.username}</span></button>
@@ -153,6 +128,13 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
       <main className="principal">
         <button className="boton-menu" onClick={() => setMenuMovil(true)} aria-label="Abrir menú">☰</button>
         <Notificaciones className="campana-movil campana-fija" perfil={perfil} proyectos={activos} carpetas={mapaCarpetas} alAbrir={(id) => ir(`/p/${id}`)} />
+        {volver && (
+          <div className="barra-volver">
+            <button type="button" className="volver" onClick={() => ir(volver.a)} aria-label={`Volver a ${volver.nombre}`} title={`Volver a ${volver.nombre}`}>
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>
+          </div>
+        )}
         {ruta.tipo === "usuarios" && perfil.is_admin && <AdminUsuarios perfil={perfil} avisar={avisar} />}
         {ruta.tipo === "proyecto" && actual && <Proyecto key={actual.id} proyecto={actual} perfil={perfil} avisar={avisar} cambioLocal={cambioLocal}
           carpetas={carpetas} carpeta={mapaCarpetas[actual.carpeta_id] ?? null} escribe={escribe} abrirSubtarea={ruta.sub} />}

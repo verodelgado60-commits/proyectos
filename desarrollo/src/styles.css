@@ -598,3 +598,18 @@ button.chip-na:hover:not(:disabled) { border-color: var(--primario); color: var(
 .opcion-proyectos { border-top: 6px solid #0780ee; } .opcion-proyectos .icono-opcion { background: color-mix(in srgb, #0780ee 14%, var(--superficie)); }
 .opcion-dash { border-top: 6px solid #ff7c00; } .opcion-dash .icono-opcion { background: color-mix(in srgb, #ff7c00 14%, var(--superficie)); }
 .opcion-proyectos:hover { border-color: #0780ee; } .opcion-dash:hover { border-color: #ff7c00; }
+
+/* Flechita para volver */
+.barra-volver { padding: 14px 28px 0; }
+.volver { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; border: 1px solid transparent; background: transparent; color: #b0b0b4; cursor: pointer; transition: background .15s, color .15s; }
+.volver:hover { background: var(--hover); color: var(--tenue); }
+.volver:focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; }
+.barra-volver + .inicio { padding-top: 6px; }
+.barra-volver + .proyecto .cabecera-proyecto { padding-top: 4px; }
+@media (max-width: 860px) {
+  .barra-volver { position: fixed; top: calc(10px + env(safe-area-inset-top, 0px)); left: calc(58px + env(safe-area-inset-left, 0px)); padding: 0; z-index: 20; }
+  .volver { width: 40px; height: 40px; background: var(--superficie); border-color: var(--borde); border-radius: 8px; color: #8b8e94; }
+  .barra-volver + .inicio { padding-top: 0; }
+  .barra-volver + .proyecto .cabecera-proyecto { padding-left: 108px; }
+}
+@media (min-width: 861px) { .barra-volver:has(+ .proyecto) { background: var(--superficie); padding-bottom: 2px; } }

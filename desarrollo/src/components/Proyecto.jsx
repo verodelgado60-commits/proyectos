@@ -79,9 +79,6 @@ export default function Proyecto({ proyecto, perfil, avisar, cambioLocal , carpe
   return (
     <section className="proyecto">
       <header className="cabecera-proyecto">
-        <nav className="migas-proyecto" aria-label="Ubicación">
-          <a href={`#/c/${carpeta ? carpeta.id : "sin-proyecto"}`}>← {carpeta ? carpeta.name : "Sin proyecto"}</a>
-        </nav>
         <div className="titulo-proyecto">
           <i className="punto grande" style={{ background: proyecto.color }} />
           <h1><TextoEditable valor={proyecto.name} editable={puedeEditar} max={120} onGuardar={(name) => actualizarProyecto({ name })} /></h1>
