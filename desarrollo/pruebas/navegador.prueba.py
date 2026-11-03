@@ -62,6 +62,10 @@ with sync_playwright() as pw:
     v.wait_for_selector("h1:has-text('Q3 Proyecto Alpha')")
     check("la tarea aparece debajo de IA en el menú", v.locator(".subnav button.nav-tarea:has-text('Q3 Proyecto Alpha')").count() == 1)
     check("migas: volver a IA", v.locator(".migas-proyecto a").inner_text() == "← IA")
+    v.click("button.flecha-nav[aria-label='Cerrar IA']"); v.wait_for_timeout(200)
+    check("la flechita cierra el proyecto en el menú", v.locator(".subnav button.nav-tarea:has-text('Q3 Proyecto Alpha')").count() == 0 and v.locator("h1:has-text('Q3 Proyecto Alpha')").count() == 1)
+    v.click("button.flecha-nav[aria-label='Abrir IA']"); v.wait_for_timeout(200)
+    check("la flechita lo vuelve a abrir", v.locator(".subnav button.nav-tarea:has-text('Q3 Proyecto Alpha')").count() == 1)
     v.screenshot(path=C + "01b_carpeta_menu.png")
     for t in ["Requisitos", "Criterios de éxito", "Presupuesto"]:
         v.fill("input[aria-label^='Agregar subtarea a']", t); v.keyboard.press("Enter"); v.wait_for_selector(f"text={t}")

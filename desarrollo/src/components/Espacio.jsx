@@ -57,6 +57,10 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
   const carpetaAbierta = ruta.tipo === "carpeta" ? ruta.id : actual ? (idsCarpeta.has(actual.carpeta_id) ? actual.carpeta_id : SIN) : null;
   const mapaCarpetas = Object.fromEntries(todasCarpetas.map((c) => [c.id, c]));
   const [nuevaCarpeta, setNuevaCarpeta] = useState(false);
+  // Flechitas del menú: cada proyecto se puede abrir o cerrar a mano
+  const [manual, setManual] = useState({});
+  const expandida = (id) => manual[id] ?? carpetaAbierta === id;
+  const alternarCarpeta = (id) => setManual((m) => ({ ...m, [id]: !expandida(id) }));
   const crearTareaEn = (cid) => setNuevo({ carpeta: cid === SIN ? null : cid });
 
   useEffect(() => {
@@ -76,14 +80,18 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
           {cargando && <p className="tenue pequeno">Cargando…</p>}
           {!cargando && !carpetas.length && !sueltas.length && <p className="tenue pequeno">Aún no tenés proyectos.</p>}
           {[...carpetas, ...(sueltas.length ? [{ id: SIN, name: "Sin proyecto", color: "#b0b0b4" }] : [])].map((c) => {
-            const abierta = carpetaAbierta === c.id;
+            const abierta = expandida(c.id);
             return (
               <div key={c.id} className="grupo-nav">
-                <button className={`nav-item nav-carpeta ${ruta.tipo === "carpeta" && abierta ? "activo" : ""}`} onClick={() => ir(`/c/${c.id}`)} aria-expanded={abierta}>
-                  <span className="flecha-nav" aria-hidden="true">{abierta ? "▾" : "▸"}</span>
-                  <i className="punto" style={{ background: c.color }} /> <span className="corta">{c.name}</span>
-                  <small className="tenue">{tareasDe(c.id).length}</small>
-                </button>
+                <div className="fila-carpeta">
+                  <button type="button" className="flecha-nav" onClick={() => alternarCarpeta(c.id)} aria-expanded={abierta}
+                    aria-label={`${abierta ? "Cerrar" : "Abrir"} ${c.name}`} title={abierta ? "Cerrar" : "Abrir"}>{abierta ? "▾" : "▸"}</button>
+                  <button className={`nav-item nav-carpeta ${ruta.tipo === "carpeta" && carpetaAbierta === c.id ? "activo" : ""}`}
+                    onClick={() => { setManual((m) => ({ ...m, [c.id]: true })); ir(`/c/${c.id}`); }}>
+                    <i className="punto" style={{ background: c.color }} /> <span className="corta">{c.name}</span>
+                    <small className="tenue">{tareasDe(c.id).length}</small>
+                  </button>
+                </div>
                 {abierta && (
                   <div className="subnav">
                     {tareasDe(c.id).map((p) => (

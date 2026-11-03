@@ -467,7 +467,10 @@ button.chip-vence { cursor: pointer; }
 .grupo-nav { display: flex; flex-direction: column; }
 .nav-carpeta { gap: 6px; }
 .nav-carpeta small { margin-left: auto; font-variant-numeric: tabular-nums; }
-.flecha-nav { width: 12px; color: var(--tenue); font-size: 11px; }
+.fila-carpeta { display: flex; align-items: center; gap: 2px; }
+.fila-carpeta .nav-carpeta { flex: 1; min-width: 0; }
+.flecha-nav { flex: none; width: 24px; height: 28px; border: 0; background: transparent; border-radius: 6px; color: var(--tenue); font-size: 12px; cursor: pointer; display: grid; place-items: center; padding: 0; }
+.flecha-nav:hover { background: var(--hover); color: var(--texto); }
 .subnav { display: flex; flex-direction: column; margin: 2px 0 6px 18px; padding-left: 8px; border-left: 2px solid var(--borde); }
 .nav-tarea { font-size: 13px; padding-top: 6px; padding-bottom: 6px; }
 .nav-crear { color: var(--primario); font-weight: 600; }
