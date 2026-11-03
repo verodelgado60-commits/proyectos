@@ -174,8 +174,8 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
 const SIN = "sin-proyecto";
 // Segmento de cada tarea (línea de negocio)
 export const SEGMENTOS = [{ id: "movil", nombre: "Móvil", color: "#0780ee" }, { id: "hogar", nombre: "Hogar", color: "#ff7c00" }, { id: "ambos", nombre: "Ambos", color: "#a63be3" }];
-// Las tareas de "Ambos" también aparecen al filtrar por Móvil o por Hogar
-const entraEnSegmento = (t, seg) => !seg || t.segmento === seg || (t.segmento === "ambos" && (seg === "movil" || seg === "hogar"));
+// Cada filtro muestra (y cuenta) solo las tareas de ese segmento
+const entraEnSegmento = (t, seg) => !seg || t.segmento === seg;
 const segmentoDe = (id) => SEGMENTOS.find((x) => x.id === id);
 function SelectorSegmento({ valor, onCambiar, id }) {
   return (
