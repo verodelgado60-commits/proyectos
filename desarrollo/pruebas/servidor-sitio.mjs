@@ -3,7 +3,7 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 export function servirSitio({ raiz, puerto, api, versionForzada }) {
-  const tipos = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".woff2": "font/woff2" };
+  const tipos = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".woff2": "font/woff2", ".webmanifest": "application/manifest+json", ".png": "image/png" };
   const s = http.createServer((req, res) => {
     const url = new URL(req.url, "http://x");
     let ruta = decodeURIComponent(url.pathname);
