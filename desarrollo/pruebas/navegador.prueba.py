@@ -56,11 +56,7 @@ with sync_playwright() as pw:
     check("tras token y contraseña nueva entra al espacio", True)
     check("el token quedó cifrado (no aparece en usuarios.json)", TOKEN.encode() not in control("?archivo=usuarios.json"))
 
-    print("App instalable")
-    check("manifiesto con ícono y nombre", v.evaluate("async () => { const m = await (await fetch(document.querySelector('link[rel=manifest]').href)).json(); return m.name === 'Proyectos' && m.icons.length >= 3 && m.display === 'standalone' }"))
-    check("service worker activo", v.evaluate("async () => (await navigator.serviceWorker.ready).active.state") == "activated")
-    v.click("button.boton-instalar"); v.wait_for_selector(".modal >> text=Instalar como app"); check("botón «Instalar app» con los pasos", True)
-    v.click(".modal button:has-text('Entendido')")
+    check("sin service worker registrado (app instalable quitada)", v.evaluate("async () => (await navigator.serviceWorker.getRegistrations()).length") == 0)
     print("Proyecto, tareas, comentarios y adjuntos")
     v.click("text=+ Nuevo proyecto"); v.fill("#nc-nombre", "IA"); v.click(".modal button:has-text('Crear proyecto')")
     v.wait_for_selector(".vista-carpeta h1:has-text('IA')"); check("proyecto IA creado y abierto", True)

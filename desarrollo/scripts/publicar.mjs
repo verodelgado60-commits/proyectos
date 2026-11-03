@@ -18,17 +18,6 @@ const v = (texto) => texto
   .replaceAll('"./lib/vendor.js"', `"./lib/vendor.js?v=${VERSION}"`)
   .replaceAll("'./lib/vendor.js'", `'./lib/vendor.js?v=${VERSION}'`);
 let html = fs.readFileSync(path.join(dist, "index.html"), "utf8");
-// App instalable: manifiesto, íconos y colores (archivos estáticos en la raíz: manifest.webmanifest, sw.js, iconos/)
-html = html.replace(/<link rel="icon"[^>]*>/, [
-  `<link rel="icon" type="image/png" sizes="32x32" href="./iconos/favicon-32.png">`,
-  `<link rel="manifest" href="./manifest.webmanifest">`,
-  `<link rel="apple-touch-icon" href="./iconos/apple-touch-icon.png">`,
-  `<meta name="theme-color" content="#0780ee">`,
-  `<meta name="apple-mobile-web-app-capable" content="yes">`,
-  `<meta name="mobile-web-app-capable" content="yes">`,
-  `<meta name="apple-mobile-web-app-title" content="Proyectos">`,
-  `<meta name="apple-mobile-web-app-status-bar-style" content="default">`,
-].join("\n    "));
 html = html.replace(/<title>[^<]*<\/title>/, "<title>Proyectos</title>");
 html = html.replace(/src="\.\/app\.js"/, `src="./app.js?v=${VERSION}"`).replace(/href="\.\/estilos\.css"/, `href="./estilos.css?v=${VERSION}"`);
 fs.writeFileSync(path.join(raiz, "index.html"), html);

@@ -11,7 +11,6 @@ import ActualizarToken from "./ActualizarToken.jsx";
 import MiDia from "./MiDia.jsx";
 import Buscador from "./Buscador.jsx";
 import AvisoHoy from "./AvisoHoy.jsx";
-import InstalarApp from "./InstalarApp.jsx";
 import { EstadoGuardado } from "./Sistema.jsx";
 import Notificaciones from "./Notificaciones.jsx";
 
@@ -128,7 +127,6 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
             );
           })}
         </nav>
-        <InstalarApp />
         <Desplegable alinear="arriba" className="cuenta" boton={({ alternar }) => (
           <button className="nav-item" onClick={alternar}><Avatar perfil={perfil} size={26} /> <span className="corta">{perfil.full_name || perfil.username}</span></button>
         )}>
