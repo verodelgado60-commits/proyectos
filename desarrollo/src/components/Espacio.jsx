@@ -59,7 +59,8 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
   const activos = proyectos.filter((p) => !p.archivada);
   const enCarpeta = (lista, cid) => (cid === SIN ? lista.filter((p) => !p.carpeta_id || !idsCarpeta.has(p.carpeta_id)) : lista.filter((p) => p.carpeta_id === cid));
   const sueltas = enCarpeta(activos, SIN);
-  const tareasDe = (cid) => enCarpeta(activos, cid);
+  const porVencimiento = (a, b) => (a.due_date ?? "9999").localeCompare(b.due_date ?? "9999") || a.name.localeCompare(b.name);
+  const tareasDe = (cid) => enCarpeta(activos, cid).sort(porVencimiento);
   const archivadasDe = (cid) => enCarpeta(proyectos.filter((p) => p.archivada), cid);
   const carpetaAbierta = ruta.tipo === "carpeta" ? ruta.id : actual ? (idsCarpeta.has(actual.carpeta_id) ? actual.carpeta_id : SIN) : null;
   const mapaCarpetas = Object.fromEntries(todasCarpetas.map((c) => [c.id, c]));
@@ -171,15 +172,31 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
 }
 
 const SIN = "sin-proyecto";
+// Segmento de cada tarea (línea de negocio)
+export const SEGMENTOS = [{ id: "movil", nombre: "Móvil", color: "#0780ee" }, { id: "hogar", nombre: "Hogar", color: "#ff7c00" }];
+const segmentoDe = (id) => SEGMENTOS.find((x) => x.id === id);
+function SelectorSegmento({ valor, onCambiar, id }) {
+  return (
+    <div className="selector-segmento" role="radiogroup" aria-labelledby={id}>
+      {[{ id: "", nombre: "Sin segmento" }, ...SEGMENTOS].map((x) => (
+        <button key={x.id || "ninguno"} type="button" role="radio" aria-checked={valor === x.id}
+          className={`opcion-segmento ${valor === x.id ? "activa" : ""}`} style={valor === x.id && x.color ? { background: x.color, borderColor: x.color, color: "#ffffff" } : undefined}
+          onClick={() => onCambiar(x.id)}>{x.nombre}</button>
+      ))}
+    </div>
+  );
+}
 
 function Inicio({ perfil, carpetas, sueltas, tareasDe, cargando, escribe, onNuevo, ir }) {
   // Saludo: el nombre que la persona eligió en Mi cuenta; si no, su primer nombre
   const nombre = perfil.nickname || (perfil.full_name || perfil.username).split(" ")[0];
-  const lista = [...carpetas, ...(sueltas.length ? [{ id: SIN, name: "Sin proyecto", color: "#b0b0b4" }] : [])];
+  // Los más recientes primero
+  const recientes = [...carpetas].sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")));
+  const lista = [...recientes, ...(sueltas.length ? [{ id: SIN, name: "Sin proyecto", color: "#b0b0b4" }] : [])];
   return (
     <section className="inicio">
       <h1>Hola {nombre}</h1>
-      <p className="tenue">Todo lo que cambiés se guarda al instante y se ve en vivo en todos tus dispositivos</p>
+      <p className="tenue">Acá están tus últimos proyectos</p>
       <div className="tarjetas">
         {lista.map((c) => {
           const n = tareasDe(c.id).length;
@@ -204,6 +221,12 @@ function VistaCarpeta({ carpeta, carpetas, tareas, archivadas = [], perfil, escr
   const [editando, setEditando] = useState(null);
   const [borrando, setBorrando] = useState(null);
   const [verArchivadas, setVerArchivadas] = useState(false);
+  const [segmento, setSegmento] = useState(() => { try { return localStorage.getItem("segmento-vista") || ""; } catch { return ""; } });
+  const elegirSegmento = (v) => { setSegmento(v); try { localStorage.setItem("segmento-vista", v); } catch { /* opcional */ } };
+  // Ordenadas por fecha de vencimiento (las sin fecha al final)
+  const mostradas = tareas.filter((t) => !segmento || t.segmento === segmento)
+    .sort((a, b) => (a.due_date ?? "9999").localeCompare(b.due_date ?? "9999") || a.name.localeCompare(b.name));
+  const cuantas = (id) => tareas.filter((t) => (id ? t.segmento === id : true)).length;
   const archivar = async (t, valor) => {
     const { error } = await supabase.from("projects").update({ archivada: valor }).eq("id", t.id);
     if (error) avisar(traducirError(error), "error"); else avisar(valor ? `«${t.name}» archivada` : `«${t.name}» volvió a la lista`);
@@ -245,10 +268,21 @@ function VistaCarpeta({ carpeta, carpetas, tareas, archivadas = [], perfil, escr
         )}
       </div>
       <p className="tenue">{real ? "Elegí una tarea para ver sus subtareas" : "Tareas que todavía no están en ningún proyecto. Desde cada tarea (•••) las podés mover."}</p>
+      {tareas.length > 0 && (
+        <div className="filtro-segmento" role="tablist" aria-label="Segmento">
+          {[{ id: "", nombre: "Todas" }, ...SEGMENTOS].map((x) => (
+            <button key={x.id || "todas"} role="tab" aria-selected={segmento === x.id} className={`pestana-segmento ${segmento === x.id ? "activa" : ""}`}
+              style={segmento === x.id && x.color ? { background: x.color, borderColor: x.color, color: "#ffffff" } : undefined}
+              onClick={() => elegirSegmento(x.id)}>{x.nombre} <small>{cuantas(x.id)}</small></button>
+          ))}
+          <span className="tenue pequeno orden-nota">Ordenadas por fecha de vencimiento</span>
+        </div>
+      )}
       <div className="tarjetas">
-        {tareas.map((p) => (
+        {mostradas.map((p) => (
           <div key={p.id} className="tarjeta-envoltura">
             <button className="tarjeta-proyecto" onClick={() => ir(`/p/${p.id}`)} style={{ borderTopColor: p.color }}>
+              {segmentoDe(p.segmento) && <span className="chip-segmento" style={{ background: segmentoDe(p.segmento).color }}>{segmentoDe(p.segmento).nombre}</span>}
               <strong>{p.name}</strong>
               <span className="tenue">{p.description || "Sin descripción"}</span>
               {p.due_date && <span className={`vence-tarjeta ${diasHasta(p.due_date) <= 1 ? "pronto" : ""}`}>Vence {fechaCorta(p.due_date)}</span>}
@@ -309,12 +343,13 @@ function EditarTarea({ tarea, carpetas, avisar, onClose }) {
   const [vence, setVence] = useState(tarea.due_date ?? "");
   const [color, setColor] = useState(tarea.color);
   const [carpeta, setCarpeta] = useState(tarea.carpeta_id ?? "");
+  const [segmento, setSegmento] = useState(tarea.segmento ?? "");
   const [enviando, setEnviando] = useState(false);
   const guardar = async (e) => {
     e.preventDefault();
     if (!nombre.trim()) return;
     setEnviando(true);
-    const { error } = await supabase.from("projects").update({ name: nombre.trim(), description: descripcion.trim(), due_date: vence || null, color, carpeta_id: carpeta || null }).eq("id", tarea.id);
+    const { error } = await supabase.from("projects").update({ name: nombre.trim(), description: descripcion.trim(), due_date: vence || null, color, carpeta_id: carpeta || null, segmento: segmento || null }).eq("id", tarea.id);
     setEnviando(false);
     if (error) { avisar(traducirError(error), "error"); return; }
     avisar("Tarea actualizada"); onClose();
@@ -325,6 +360,7 @@ function EditarTarea({ tarea, carpetas, avisar, onClose }) {
         <label className="campo" htmlFor="et-nombre"><span>Nombre</span><input id="et-nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={120} autoFocus /></label>
         <label className="campo" htmlFor="et-desc"><span>Descripción</span><textarea id="et-desc" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={2000} rows={3} /></label>
         <label className="campo" htmlFor="et-vence"><span>Fecha de vencimiento</span><input id="et-vence" type="date" value={vence} onChange={(e) => setVence(e.target.value)} /></label>
+        <div className="campo"><span id="et-segmento">Segmento</span><SelectorSegmento id="et-segmento" valor={segmento} onCambiar={setSegmento} /></div>
         <label className="campo" htmlFor="et-carpeta"><span>Proyecto</span><select id="et-carpeta" value={carpeta} onChange={(e) => setCarpeta(e.target.value)}>
           <option value="">Sin proyecto</option>
           {carpetas.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -368,6 +404,7 @@ function NuevaCarpeta({ carpetas, avisar, onClose, onCreada }) {
 
 function NuevoProyecto({ carpeta: carpetaInicial, carpetas, proyectos, perfil, avisar, onClose, onCreado }) {
   const [carpeta, setCarpeta] = useState(carpetaInicial ?? "");
+  const [segmento, setSegmento] = useState(() => { try { return localStorage.getItem("segmento-vista") || ""; } catch { return ""; } });
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [color, setColor] = useState(COLORES[0]);
@@ -378,7 +415,7 @@ function NuevoProyecto({ carpeta: carpetaInicial, carpetas, proyectos, perfil, a
     if (!nombre.trim()) return;
     setEnviando(true);
     const { data, error } = await supabase.from("projects")
-      .insert({ name: nombre.trim(), description: descripcion.trim(), color, due_date: vence || null, carpeta_id: carpeta || null, owner_id: perfil.id, position: posicionAlFinal(proyectos) })
+      .insert({ name: nombre.trim(), description: descripcion.trim(), color, due_date: vence || null, carpeta_id: carpeta || null, segmento: segmento || null, owner_id: perfil.id, position: posicionAlFinal(proyectos) })
       .select().single();
     setEnviando(false);
     if (error) { avisar(traducirError(error), "error"); return; }
@@ -389,6 +426,7 @@ function NuevoProyecto({ carpeta: carpetaInicial, carpetas, proyectos, perfil, a
     <Modal titulo="Nueva tarea" onClose={onClose}>
       <form onSubmit={crear}>
         <label className="campo" htmlFor="nt-nombre"><span>Nombre</span><input id="nt-nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={120} autoFocus placeholder="Ej. Ajustar flujo de bienvenida" /></label>
+        <div className="campo"><span id="nt-segmento">Segmento</span><SelectorSegmento id="nt-segmento" valor={segmento} onCambiar={setSegmento} /></div>
         <label className="campo" htmlFor="nt-carpeta"><span>Proyecto</span><select id="nt-carpeta" value={carpeta} onChange={(e) => setCarpeta(e.target.value)}>
           <option value="">Sin proyecto</option>
           {carpetas.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}

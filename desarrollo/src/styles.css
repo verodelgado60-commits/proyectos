@@ -568,3 +568,12 @@ button.chip-na:hover:not(:disabled) { border-color: var(--primario); color: var(
 .resultado > .tenue { flex-basis: 100%; }
 .resultado mark { background: #ffbe00; color: #30343c; border-radius: 3px; padding: 0 2px; }
 .nav .buscador-menu, nav .buscador-menu { margin: 2px 0 8px; }
+
+/* Segmento Móvil / Hogar */
+.selector-segmento, .filtro-segmento { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.filtro-segmento { margin: 4px 0 14px; }
+.opcion-segmento, .pestana-segmento { border: 1px solid var(--borde); background: var(--superficie); color: var(--texto); border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.pestana-segmento.activa:not([style]), .opcion-segmento.activa:not([style]) { background: var(--texto); color: var(--superficie); border-color: var(--texto); }
+.pestana-segmento small { opacity: .75; font-weight: 500; margin-left: 2px; }
+.orden-nota { margin-left: auto; }
+.chip-segmento { justify-self: start; color: #ffffff; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; letter-spacing: .3px; }
