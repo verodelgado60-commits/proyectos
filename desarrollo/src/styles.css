@@ -567,3 +567,4 @@ button.chip-na:hover:not(:disabled) { border-color: var(--primario); color: var(
 .resultado:hover { border-color: var(--primario); }
 .resultado > .tenue { flex-basis: 100%; }
 .resultado mark { background: #ffbe00; color: #30343c; border-radius: 3px; padding: 0 2px; }
+.nav .buscador-menu, nav .buscador-menu { margin: 2px 0 8px; }

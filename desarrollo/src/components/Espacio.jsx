@@ -88,15 +88,15 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
       <aside className="barra-lateral" aria-label="Navegación">
         <div className="marca"><span>Proyectos</span></div>
         {escribe && <button className="boton primario ancho" onClick={() => setNuevaCarpeta(true)}>+ Nuevo proyecto</button>}
-        <div className="buscador-menu" role="search">
-          <input ref={refBuscar} type="search" value={busqueda} onChange={(e) => buscar(e.target.value)} placeholder="🔍 Buscar…  ( / )" aria-label="Buscar en todo" maxLength={80}
-            onKeyDown={(e) => { if (e.key === "Escape") { buscar(""); e.currentTarget.blur(); } }} />
-        </div>
         <nav>
           <button className={`nav-item ${ruta.tipo === "inicio" ? "activo" : ""}`} onClick={() => ir("")}>🏠 Inicio</button>
           <button className={`nav-item ${ruta.tipo === "hoy" ? "activo" : ""}`} onClick={() => ir("/hoy")}>☀️ Mi día</button>
           {perfil.is_admin && <button className={`nav-item ${ruta.tipo === "usuarios" ? "activo" : ""}`} onClick={() => ir("/usuarios")}>👥 Usuarios y permisos</button>}
           <h3 className="nav-titulo">Mis proyectos</h3>
+          <div className="buscador-menu" role="search">
+            <input ref={refBuscar} type="search" value={busqueda} onChange={(e) => buscar(e.target.value)} placeholder="🔍 Buscar…  ( / )" aria-label="Buscar en todo" maxLength={80}
+              onKeyDown={(e) => { if (e.key === "Escape") { buscar(""); e.currentTarget.blur(); } }} />
+          </div>
           {cargando && <p className="tenue pequeno">Cargando…</p>}
           {!cargando && !carpetas.length && !sueltas.length && <p className="tenue pequeno">Aún no tenés proyectos.</p>}
           {[...carpetas, ...(sueltas.length ? [{ id: SIN, name: "Sin proyecto", color: "#b0b0b4" }] : [])].map((c) => {
