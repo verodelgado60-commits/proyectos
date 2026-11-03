@@ -10,6 +10,7 @@ import CambiarClave from "./CambiarClave.jsx";
 import ActualizarToken from "./ActualizarToken.jsx";
 import MiDia from "./MiDia.jsx";
 import Buscador from "./Buscador.jsx";
+import { MenuDashes, NuevoGrupoDash, useDashes, VistaDash, VistaGrupoDash } from "./Dashes.jsx";
 import AvisoHoy from "./AvisoHoy.jsx";
 import { EstadoGuardado } from "./Sistema.jsx";
 import Notificaciones from "./Notificaciones.jsx";
@@ -19,6 +20,8 @@ function leerRuta() {
   const [tipo, id, sub] = h.split("/");
   if (tipo === "p" && id) return { tipo: "proyecto", id, sub: sub || null };
   if (tipo === "hoy") return { tipo: "hoy" };
+  if (tipo === "dg" && id) return { tipo: "dash-grupo", id };
+  if (tipo === "d" && id) return { tipo: "dash", id };
   if (tipo === "buscar") { let q = ""; try { q = decodeURIComponent(h.slice(7)); } catch { /* texto inválido */ } return { tipo: "buscar", q }; }
   if (tipo === "c" && id) return { tipo: "carpeta", id };
   if (tipo === "usuarios") return { tipo: "usuarios" };
@@ -65,6 +68,8 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
   const carpetaAbierta = ruta.tipo === "carpeta" ? ruta.id : actual ? (idsCarpeta.has(actual.carpeta_id) ? actual.carpeta_id : SIN) : null;
   const mapaCarpetas = Object.fromEntries(todasCarpetas.map((c) => [c.id, c]));
   const [nuevaCarpeta, setNuevaCarpeta] = useState(false);
+  const datosDash = useDashes(perfil, avisar);
+  const [nuevoGrupoDash, setNuevoGrupoDash] = useState(false);
   const [busqueda, setBusqueda] = useState(() => (leerRuta().tipo === "buscar" ? leerRuta().q : ""));
   const refBuscar = useRef(null);
   const buscar = (t) => { setBusqueda(t); window.location.hash = t.trim() ? `/buscar/${encodeURIComponent(t)}` : (ruta.tipo === "buscar" ? "" : window.location.hash); };
@@ -126,6 +131,7 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
               </div>
             );
           })}
+          <MenuDashes datos={datosDash} ruta={ruta} ir={ir} onNuevoGrupo={() => setNuevoGrupoDash(true)} />
         </nav>
         <Desplegable alinear="arriba" className="cuenta" boton={({ alternar }) => (
           <button className="nav-item" onClick={alternar}><Avatar perfil={perfil} size={26} /> <span className="corta">{perfil.full_name || perfil.username}</span></button>
@@ -149,6 +155,13 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
         {ruta.tipo === "proyecto" && actual && <Proyecto key={actual.id} proyecto={actual} perfil={perfil} avisar={avisar} cambioLocal={cambioLocal}
           carpetas={carpetas} carpeta={mapaCarpetas[actual.carpeta_id] ?? null} escribe={escribe} abrirSubtarea={ruta.sub} />}
         {ruta.tipo === "buscar" && <Buscador texto={busqueda} proyectos={proyectos} carpetas={todasCarpetas} avisar={avisar} ir={(h) => { setBusqueda(""); ir(h); }} />}
+        {ruta.tipo === "dash-grupo" && datosDash.grupos.find((g) => g.id === ruta.id) && (
+          <VistaGrupoDash key={ruta.id} grupo={datosDash.grupos.find((g) => g.id === ruta.id)} datos={datosDash} ir={ir} />
+        )}
+        {ruta.tipo === "dash" && datosDash.dashes.find((d) => d.id === ruta.id) && (() => {
+          const dash = datosDash.dashes.find((d) => d.id === ruta.id);
+          return <VistaDash key={dash.id} dash={dash} grupo={datosDash.grupos.find((g) => g.id === dash.grupo_id)} datos={datosDash} ir={ir} />;
+        })()}
         {ruta.tipo === "hoy" && <MiDia perfil={perfil} proyectos={activos} carpetas={todasCarpetas} avisar={avisar} ir={ir} />}
         {ruta.tipo === "carpeta" && (ruta.id === SIN || mapaCarpetas[ruta.id]) && (
           <VistaCarpeta key={ruta.id} carpeta={ruta.id === SIN ? { id: SIN, name: "Sin proyecto", color: "#b0b0b4" } : mapaCarpetas[ruta.id]}
@@ -161,6 +174,7 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
       </main>
 
       {!cargando && <AvisoHoy perfil={perfil} proyectos={activos} ir={ir} />}
+      {nuevoGrupoDash && <NuevoGrupoDash datos={datosDash} ir={ir} onClose={() => setNuevoGrupoDash(false)} />}
       {nuevaCarpeta && <NuevaCarpeta carpetas={todasCarpetas} avisar={avisar} onClose={() => setNuevaCarpeta(false)}
         onCreada={(c) => { setCarpetas((l) => ordenar(aplicarCambio(l, { eventType: "INSERT", new: c }))); setNuevaCarpeta(false); ir(`/c/${c.id}`); }} />}
       {nuevo && <NuevoProyecto carpeta={nuevo.carpeta ?? null} carpetas={carpetas} proyectos={proyectos} perfil={perfil} avisar={avisar} onClose={() => setNuevo(false)} onCreado={(p) => { cambioLocal({ eventType: "INSERT", new: p }); setNuevo(false); ir(`/p/${p.id}`); }} />}

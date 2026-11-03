@@ -38,6 +38,11 @@ export const reglas = {
     const yo = ctx.sesion.user.id;
     // Proyectos (carpetas) que agrupan tareas: IA, IVR, Pre2post…
     // Responsables sin cuenta (Tif, Fer, David…) y ajustes generales
+    if (tabla === "dash_grupos" || tabla === "dashes") {
+      if (!escribeGlobal(ctx)) error("No tenés permiso para crear dashboards.");
+      if (!String(fila.name ?? "").trim()) error("Escribí un nombre.");
+      return { position: 0, ...fila, name: String(fila.name).trim().slice(0, 80), created_by: yo, created_at: ahora() };
+    }
     if (tabla === "responsables" || tabla === "ajustes") {
       if (!escribeGlobal(ctx)) error("No tenés permiso para hacer este cambio.");
       if (tabla === "responsables" && !String(fila.name ?? "").trim()) error("Escribí un nombre.");
@@ -87,6 +92,12 @@ export const reglas = {
   },
 
   actualizar(tabla, fila, cambios, ctx) {
+    if (tabla === "dash_grupos" || tabla === "dashes") {
+      if (!escribeGlobal(ctx)) error("No tenés permiso para editar dashboards.");
+      const c = { ...cambios }; delete c.id; delete c.created_by; delete c.created_at;
+      if ("name" in c && !String(c.name).trim()) error("Escribí un nombre.");
+      return c;
+    }
     if (tabla === "responsables" || tabla === "ajustes") {
       if (!escribeGlobal(ctx)) error("No tenés permiso para hacer este cambio.");
       const c = { ...cambios }; delete c.id; delete c.created_by; delete c.created_at; return c;
@@ -120,6 +131,11 @@ export const reglas = {
 
   borrar(tabla, fila, ctx) {
     const tareas = ctx.tablas.tasks ?? [];
+    if (tabla === "dash_grupos" || tabla === "dashes") {
+      if (!escribeGlobal(ctx)) error("No tenés permiso para eliminar dashboards.");
+      if (tabla === "dash_grupos") ctx.extra.push({ t: "delete", tabla: "dashes", filtros: [["grupo_id", "eq", fila.id]] });
+      return;
+    }
     if (tabla === "responsables" || tabla === "ajustes") {
       if (!escribeGlobal(ctx)) error("No tenés permiso para hacer este cambio.");
       if (tabla === "responsables") ctx.extra.push({ t: "update", tabla: "tasks", filtros: [["assignee_id", "eq", fila.id]], cambios: { assignee_id: null } });
