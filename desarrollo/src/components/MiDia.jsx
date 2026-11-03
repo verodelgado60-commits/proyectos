@@ -4,6 +4,7 @@ import { aplicarCambio, diasHasta, fechaCorta } from "../lib/logica.js";
 import { useResponsables } from "../lib/datos.js";
 import { Avatar, textoSobre } from "./ui.jsx";
 import { esStopper } from "./Stopper.jsx";
+import { ActivarAvisosNavegador } from "./AvisoHoy.jsx";
 
 // "Mi día": lo atrasado, lo que vence hoy y mañana, y los stoppers abiertos de todos los proyectos.
 export default function MiDia({ perfil, proyectos, carpetas, avisar, ir }) {
@@ -117,6 +118,8 @@ export default function MiDia({ perfil, proyectos, carpetas, avisar, ir }) {
           {personas.filter((p) => p.id !== perfil.id).map((p) => <option key={p.id} value={p.id}>{p.full_name || p.username}</option>)}
           <option value="nadie">Sin responsable</option>
         </select>
+        <span className="empuje" />
+        <ActivarAvisosNavegador />
       </div>
       {cargando ? <div className="cargando-bloque"><div className="girando" /></div> : (<>
         {tareasPorVencer.length > 0 && (

@@ -9,6 +9,7 @@ import AdminUsuarios from "./AdminUsuarios.jsx";
 import CambiarClave from "./CambiarClave.jsx";
 import ActualizarToken from "./ActualizarToken.jsx";
 import MiDia from "./MiDia.jsx";
+import AvisoHoy from "./AvisoHoy.jsx";
 import { EstadoGuardado } from "./Sistema.jsx";
 import Notificaciones from "./Notificaciones.jsx";
 
@@ -138,6 +139,7 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
         )}
       </main>
 
+      {!cargando && <AvisoHoy perfil={perfil} proyectos={proyectos} ir={ir} />}
       {nuevaCarpeta && <NuevaCarpeta carpetas={todasCarpetas} avisar={avisar} onClose={() => setNuevaCarpeta(false)}
         onCreada={(c) => { setCarpetas((l) => ordenar(aplicarCambio(l, { eventType: "INSERT", new: c }))); setNuevaCarpeta(false); ir(`/c/${c.id}`); }} />}
       {nuevo && <NuevoProyecto carpeta={nuevo.carpeta ?? null} carpetas={carpetas} proyectos={proyectos} perfil={perfil} avisar={avisar} onClose={() => setNuevo(false)} onCreado={(p) => { cambioLocal({ eventType: "INSERT", new: p }); setNuevo(false); ir(`/p/${p.id}`); }} />}

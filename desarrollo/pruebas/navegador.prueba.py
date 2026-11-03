@@ -37,7 +37,11 @@ def crear_clave(p, nueva):
 with sync_playwright() as pw:
     b = pw.chromium.launch(executable_path="/opt/pw-browsers/chromium-1243/chrome-linux64/chrome", args=["--no-sandbox"])
     ctx = b.new_context(viewport={"width": 1366, "height": 860}, accept_downloads=True)
+    ctx.grant_permissions(["notifications"], origin=SITIO.rstrip("/"))
     v = ctx.new_page(); observar(v, "vero")
+    v.add_init_script("""(() => { window.__avisos = []; const N = window.Notification; if (!N) return;
+      class Falsa { constructor(t, o) { window.__avisos.push([t, (o || {}).body]); this.onclick = null; } close() {} static get permission() { return N.permission; } static requestPermission() { return N.requestPermission(); } }
+      window.Notification = Falsa; })();""")
 
     print("Ingreso de la administradora")
     entrar(v, "VeronicaDelgado1", "mala-1234"); v.wait_for_selector("text=Usuario o contraseña incorrectos.")
@@ -186,8 +190,12 @@ with sync_playwright() as pw:
     v.locator("tr.fila:has-text('Llamar a proveedor') input[aria-label='Fecha límite']").fill(hoy_iso)
     v.locator("tr.fila:has-text('Para mañana') input[aria-label='Fecha límite']").fill(manana_iso)
     v.locator("tr.fila:has-text('Atrasada') input[aria-label='Fecha límite']").fill(ayer_iso)
-    v.wait_for_selector("text=Guardado en GitHub", timeout=15000)
-    v.click("button.nav-item:has-text('Mi día')"); v.wait_for_selector(".mi-dia .bloque-dia")
+    v.wait_for_selector(".modal >> text=¡Revisá las tareas de hoy!", timeout=15000)
+    check("ventanita «¡Revisá las tareas de hoy!» cuando algo vence hoy", "Llamar a proveedor" in v.locator(".modal").inner_text())
+    check("también sale la notificación del navegador", any("Revisá las tareas de hoy" in a[0] for a in v.evaluate("window.__avisos || []")))
+    v.screenshot(path=C + "02h_aviso_hoy.png")
+    v.click(".modal button:has-text('Ver Mi día')"); v.wait_for_selector(".mi-dia .bloque-dia")
+    v.wait_for_selector("text=Guardado en GitHub", timeout=15000) if v.locator("text=Guardado en GitHub").count() else None
     texto = lambda c: v.locator(f".bloque-dia.{c}").inner_text()
     check("Mi día: vence hoy", "Llamar a proveedor" in texto("hoy"))
     check("Mi día: vence mañana", "Para mañana" in texto("manana"))
@@ -195,6 +203,8 @@ with sync_playwright() as pw:
     check("Mi día: stoppers con su motivo", "Presupuesto" in texto("stoppers") and "Falta la aprobación de finanzas" in texto("stoppers"))
     check("Mi día: no muestra lo que está Listo", "Requisitos" not in v.locator(".mi-dia").inner_text())
     v.screenshot(path=C + "02g_mi_dia.png", full_page=True)
+    v.reload(); v.wait_for_selector(".mi-dia .bloque-dia", timeout=20000); v.wait_for_timeout(1500)
+    check("la ventanita sale una sola vez al día", v.locator(".modal >> text=¡Revisá las tareas de hoy!").count() == 0)
     v.select_option("#md-persona", label="Fer"); v.wait_for_timeout(300)
     check("Mi día: filtro por responsable", v.locator(".item-dia").count() == 0)
     v.select_option("#md-persona", label="Todas las personas")

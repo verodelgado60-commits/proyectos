@@ -544,3 +544,5 @@ button.chip-na:hover:not(:disabled) { border-color: var(--primario); color: var(
 .boton-listo { padding: 4px 9px; color: #098e68; border-color: #1dcd9f; font-weight: 700; }
 .boton-listo:hover { background: #1dcd9f; color: #30343c; }
 @media (max-width: 640px) { .item-dia { flex-wrap: wrap; } .lado-dia { margin-left: 4px; } }
+.lista-aviso-hoy { margin: 8px 0 4px; padding-left: 20px; display: grid; gap: 4px; }
+.filtros-dia { flex-wrap: wrap; }
