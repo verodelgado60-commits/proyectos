@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase, traducirError } from "../lib/supabase.js";
 import { useCarpetas, useProyectos } from "../lib/datos.js";
 import { aplicarCambio, COLORES, diasHasta, fechaCorta, ordenar, posicionAlFinal } from "../lib/logica.js";
@@ -9,6 +9,7 @@ import AdminUsuarios from "./AdminUsuarios.jsx";
 import CambiarClave from "./CambiarClave.jsx";
 import ActualizarToken from "./ActualizarToken.jsx";
 import MiDia from "./MiDia.jsx";
+import Buscador from "./Buscador.jsx";
 import AvisoHoy from "./AvisoHoy.jsx";
 import { EstadoGuardado } from "./Sistema.jsx";
 import Notificaciones from "./Notificaciones.jsx";
@@ -18,6 +19,7 @@ function leerRuta() {
   const [tipo, id, sub] = h.split("/");
   if (tipo === "p" && id) return { tipo: "proyecto", id, sub: sub || null };
   if (tipo === "hoy") return { tipo: "hoy" };
+  if (tipo === "buscar") { let q = ""; try { q = decodeURIComponent(h.slice(7)); } catch { /* texto inválido */ } return { tipo: "buscar", q }; }
   if (tipo === "c" && id) return { tipo: "carpeta", id };
   if (tipo === "usuarios") return { tipo: "usuarios" };
   return { tipo: "inicio" };
@@ -53,11 +55,24 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
   const idsCarpeta = new Set(todasCarpetas.map((c) => c.id));
   const carpetas = perfil.is_admin ? todasCarpetas
     : todasCarpetas.filter((c) => c.created_by === perfil.id || proyectos.some((p) => p.carpeta_id === c.id));
-  const sueltas = proyectos.filter((p) => !p.carpeta_id || !idsCarpeta.has(p.carpeta_id));
-  const tareasDe = (cid) => (cid === SIN ? sueltas : proyectos.filter((p) => p.carpeta_id === cid));
+  // Las tareas archivadas no aparecen en el menú, en Inicio ni en los avisos (se ven en su proyecto, en "Archivadas")
+  const activos = proyectos.filter((p) => !p.archivada);
+  const enCarpeta = (lista, cid) => (cid === SIN ? lista.filter((p) => !p.carpeta_id || !idsCarpeta.has(p.carpeta_id)) : lista.filter((p) => p.carpeta_id === cid));
+  const sueltas = enCarpeta(activos, SIN);
+  const tareasDe = (cid) => enCarpeta(activos, cid);
+  const archivadasDe = (cid) => enCarpeta(proyectos.filter((p) => p.archivada), cid);
   const carpetaAbierta = ruta.tipo === "carpeta" ? ruta.id : actual ? (idsCarpeta.has(actual.carpeta_id) ? actual.carpeta_id : SIN) : null;
   const mapaCarpetas = Object.fromEntries(todasCarpetas.map((c) => [c.id, c]));
   const [nuevaCarpeta, setNuevaCarpeta] = useState(false);
+  const [busqueda, setBusqueda] = useState(() => (leerRuta().tipo === "buscar" ? leerRuta().q : ""));
+  const refBuscar = useRef(null);
+  const buscar = (t) => { setBusqueda(t); window.location.hash = t.trim() ? `/buscar/${encodeURIComponent(t)}` : (ruta.tipo === "buscar" ? "" : window.location.hash); };
+  useEffect(() => { if (ruta.tipo !== "buscar") setBusqueda(""); }, [ruta.tipo]);
+  // Atajo: la tecla / pone el cursor en el buscador
+  useEffect(() => {
+    const k = (e) => { if (e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName ?? "") && !document.activeElement?.isContentEditable) { e.preventDefault(); setMenuMovil(true); refBuscar.current?.focus(); } };
+    window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
+  }, []);
   // Flechitas del menú: cada proyecto se puede abrir o cerrar a mano
   const [manual, setManual] = useState({});
   const expandida = (id) => manual[id] ?? carpetaAbierta === id;
@@ -73,6 +88,10 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
       <aside className="barra-lateral" aria-label="Navegación">
         <div className="marca"><span>Proyectos</span></div>
         {escribe && <button className="boton primario ancho" onClick={() => setNuevaCarpeta(true)}>+ Nuevo proyecto</button>}
+        <div className="buscador-menu" role="search">
+          <input ref={refBuscar} type="search" value={busqueda} onChange={(e) => buscar(e.target.value)} placeholder="🔍 Buscar…  ( / )" aria-label="Buscar en todo" maxLength={80}
+            onKeyDown={(e) => { if (e.key === "Escape") { buscar(""); e.currentTarget.blur(); } }} />
+        </div>
         <nav>
           <button className={`nav-item ${ruta.tipo === "inicio" ? "activo" : ""}`} onClick={() => ir("")}>🏠 Inicio</button>
           <button className={`nav-item ${ruta.tipo === "hoy" ? "activo" : ""}`} onClick={() => ir("/hoy")}>☀️ Mi día</button>
@@ -124,14 +143,15 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
 
       <main className="principal">
         <button className="boton-menu" onClick={() => setMenuMovil(true)} aria-label="Abrir menú">☰</button>
-        <Notificaciones className="campana-movil campana-fija" perfil={perfil} proyectos={proyectos} carpetas={mapaCarpetas} alAbrir={(id) => ir(`/p/${id}`)} />
+        <Notificaciones className="campana-movil campana-fija" perfil={perfil} proyectos={activos} carpetas={mapaCarpetas} alAbrir={(id) => ir(`/p/${id}`)} />
         {ruta.tipo === "usuarios" && perfil.is_admin && <AdminUsuarios perfil={perfil} avisar={avisar} />}
         {ruta.tipo === "proyecto" && actual && <Proyecto key={actual.id} proyecto={actual} perfil={perfil} avisar={avisar} cambioLocal={cambioLocal}
           carpetas={carpetas} carpeta={mapaCarpetas[actual.carpeta_id] ?? null} escribe={escribe} abrirSubtarea={ruta.sub} />}
-        {ruta.tipo === "hoy" && <MiDia perfil={perfil} proyectos={proyectos} carpetas={todasCarpetas} avisar={avisar} ir={ir} />}
+        {ruta.tipo === "buscar" && <Buscador texto={busqueda} proyectos={proyectos} carpetas={todasCarpetas} avisar={avisar} ir={(h) => { setBusqueda(""); ir(h); }} />}
+        {ruta.tipo === "hoy" && <MiDia perfil={perfil} proyectos={activos} carpetas={todasCarpetas} avisar={avisar} ir={ir} />}
         {ruta.tipo === "carpeta" && (ruta.id === SIN || mapaCarpetas[ruta.id]) && (
           <VistaCarpeta key={ruta.id} carpeta={ruta.id === SIN ? { id: SIN, name: "Sin proyecto", color: "#b0b0b4" } : mapaCarpetas[ruta.id]}
-            carpetas={carpetas} tareas={tareasDe(ruta.id)} perfil={perfil} escribe={escribe} cargando={cargando} avisar={avisar} ir={ir}
+            carpetas={carpetas} tareas={tareasDe(ruta.id)} archivadas={archivadasDe(ruta.id)} perfil={perfil} escribe={escribe} cargando={cargando} avisar={avisar} ir={ir}
             onNueva={() => crearTareaEn(ruta.id)} onBorrada={(id) => { setCarpetas((l) => l.filter((c) => c.id !== id)); setProyectos((l) => l.map((p) => (p.carpeta_id === id ? { ...p, carpeta_id: null } : p))); ir(""); }} />
         )}
         {(ruta.tipo === "inicio" || (ruta.tipo === "usuarios" && !perfil.is_admin)) && (
@@ -139,7 +159,7 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
         )}
       </main>
 
-      {!cargando && <AvisoHoy perfil={perfil} proyectos={proyectos} ir={ir} />}
+      {!cargando && <AvisoHoy perfil={perfil} proyectos={activos} ir={ir} />}
       {nuevaCarpeta && <NuevaCarpeta carpetas={todasCarpetas} avisar={avisar} onClose={() => setNuevaCarpeta(false)}
         onCreada={(c) => { setCarpetas((l) => ordenar(aplicarCambio(l, { eventType: "INSERT", new: c }))); setNuevaCarpeta(false); ir(`/c/${c.id}`); }} />}
       {nuevo && <NuevoProyecto carpeta={nuevo.carpeta ?? null} carpetas={carpetas} proyectos={proyectos} perfil={perfil} avisar={avisar} onClose={() => setNuevo(false)} onCreado={(p) => { cambioLocal({ eventType: "INSERT", new: p }); setNuevo(false); ir(`/p/${p.id}`); }} />}
@@ -179,10 +199,15 @@ function Inicio({ perfil, carpetas, sueltas, tareasDe, cargando, escribe, onNuev
 }
 
 // Pantalla de un proyecto: sus tareas y "+ Crear tarea"
-function VistaCarpeta({ carpeta, carpetas, tareas, perfil, escribe, cargando, avisar, ir, onNueva, onBorrada }) {
+function VistaCarpeta({ carpeta, carpetas, tareas, archivadas = [], perfil, escribe, cargando, avisar, ir, onNueva, onBorrada }) {
   const [borrar, setBorrar] = useState(false);
   const [editando, setEditando] = useState(null);
   const [borrando, setBorrando] = useState(null);
+  const [verArchivadas, setVerArchivadas] = useState(false);
+  const archivar = async (t, valor) => {
+    const { error } = await supabase.from("projects").update({ archivada: valor }).eq("id", t.id);
+    if (error) avisar(traducirError(error), "error"); else avisar(valor ? `«${t.name}» archivada` : `«${t.name}» volvió a la lista`);
+  };
   const eliminarTarea = async (t) => {
     const { error } = await supabase.from("projects").delete().eq("id", t.id);
     if (error) avisar(traducirError(error), "error"); else avisar("Tarea eliminada");
@@ -234,6 +259,7 @@ function VistaCarpeta({ carpeta, carpetas, tareas, perfil, escribe, cargando, av
               )}>
                 {(cerrar) => (<>
                   <button className="opcion-menu" onClick={() => { cerrar(); setEditando(p); }}>✏️ Editar</button>
+                  <button className="opcion-menu" onClick={() => { cerrar(); archivar(p, true); }}>🗄 Archivar</button>
                   <button className="opcion-menu peligro" onClick={() => { cerrar(); setBorrando(p); }}>🗑 Eliminar</button>
                 </>)}
               </Desplegable>
@@ -244,6 +270,23 @@ function VistaCarpeta({ carpeta, carpetas, tareas, perfil, escribe, cargando, av
           <button className="tarjeta-proyecto nueva" onClick={onNueva}><strong>+ Crear tarea</strong><span className="tenue">Con subtareas, estados y prioridades listos para usar</span></button>
         )}
       </div>
+      {archivadas.length > 0 && (
+        <div className="archivadas-carpeta">
+          <button className="enlace" onClick={() => setVerArchivadas((x) => !x)} aria-expanded={verArchivadas}>
+            {verArchivadas ? "▾" : "▸"} 🗄 Archivadas ({archivadas.length})
+          </button>
+          {verArchivadas && (
+            <ul className="lista-archivadas">
+              {archivadas.map((t) => (
+                <li key={t.id}>
+                  <button className="enlace-archivada" onClick={() => ir(`/p/${t.id}`)}>{t.name}</button>
+                  {escribe && <button className="boton" onClick={() => archivar(t, false)}>Desarchivar</button>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
       {editando && <EditarTarea tarea={editando} carpetas={carpetas} avisar={avisar} onClose={() => setEditando(null)} />}
       {borrando && <Confirmar mensaje={`¿Eliminar la tarea "${borrando.name}"?`} detalle="Se borrarán sus subtareas, comentarios y adjuntos para todo el equipo. No se puede deshacer."
         onNo={() => setBorrando(null)} onSi={() => { const t = borrando; setBorrando(null); eliminarTarea(t); }} />}

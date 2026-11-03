@@ -174,7 +174,7 @@ function Fila({ numero, tarea, tasks, puedeEditar, api, estados, prioridades, la
   };
 
   return (<>
-    <tr className={`fila ${esSub ? "fila-sub" : ""} ${sobre ? "sobre" : ""}`} onKeyDownCapture={teclaFila}
+    <tr className={`fila ${esSub ? "fila-sub" : ""} ${sobre ? "sobre" : ""} ${tarea.archivada ? "fila-archivada" : ""}`} onKeyDownCapture={teclaFila}
       draggable={arrastrable && !esSub} onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", tarea.id); onArrastre?.(); }}
       onDragEnd={onFinArrastre} onDragOver={(e) => { if (onSoltar) { e.preventDefault(); setSobre(true); } }} onDragLeave={() => setSobre(false)}
       onDrop={(e) => { e.preventDefault(); setSobre(false); onSoltar?.(); }}>
@@ -200,6 +200,7 @@ function Fila({ numero, tarea, tasks, puedeEditar, api, estados, prioridades, la
             )}>
               {(cerrar) => (<>
                 <button className="opcion-menu" onClick={() => { cerrar(); abrir(tarea.id); }}>✏️ Editar</button>
+                {!esSub && <button className="opcion-menu" onClick={() => { cerrar(); cambiar({ archivada: !tarea.archivada }); }}>{tarea.archivada ? "📤 Desarchivar" : "🗄 Archivar"}</button>}
                 <button className="opcion-menu peligro" onClick={() => { cerrar(); setBorrar(true); }}>🗑 Eliminar</button>
               </>)}
             </Desplegable>

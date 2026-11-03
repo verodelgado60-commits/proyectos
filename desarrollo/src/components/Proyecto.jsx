@@ -38,7 +38,13 @@ export default function Proyecto({ proyecto, perfil, avisar, cambioLocal , carpe
   const personas = useMemo(() => [...d.project_members.map((m) => ({ user_id: m.user_id })), ...externos.responsables.map((r) => ({ user_id: r.id }))], [d.project_members, externos.responsables]);
   const estados = d.labels.filter((l) => l.kind === "status");
   const prioridades = d.labels.filter((l) => l.kind === "priority");
-  const visibles = useMemo(() => filtrarTareas(d.tasks, filtros), [d.tasks, filtros]);
+  // Archivadas: se ocultan de la tabla, el tablero y el resumen hasta que se pidan ver
+  const [verArchivadas, setVerArchivadas] = useState(false);
+  const [confirmarArchivo, setConfirmarArchivo] = useState(false);
+  const archivadas = d.tasks.filter((t) => t.archivada && !t.parent_id);
+  const activas = useMemo(() => d.tasks.filter((t) => !t.archivada), [d.tasks]);
+  const listasParaArchivar = activas.filter((t) => !t.parent_id && d.labels.some((l) => l.id === t.status_id && l.is_done));
+  const visibles = useMemo(() => filtrarTareas(verArchivadas ? d.tasks : activas, filtros), [d.tasks, activas, verArchivadas, filtros]);
   const prog = progreso(visibles, d.labels);
   const hayFiltros = Object.values(filtros).some(Boolean);
   const tareaAbierta = abierta ? d.tasks.find((t) => t.id === abierta) : null;
@@ -116,6 +122,8 @@ export default function Proyecto({ proyecto, perfil, avisar, cambioLocal , carpe
             <option value="">Prioridades</option>
             {prioridades.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
           </select>
+          {puedeEditar && listasParaArchivar.length > 0 && <button className="boton" onClick={() => setConfirmarArchivo(true)} title="Ocultar las subtareas en Listo">🗄 Archivar listas ({listasParaArchivar.length})</button>}
+          {archivadas.length > 0 && <button className={`boton ${verArchivadas ? "activo-toggle" : ""}`} aria-pressed={verArchivadas} onClick={() => setVerArchivadas((x) => !x)}>{verArchivadas ? "Ocultar archivadas" : `Ver archivadas (${archivadas.length})`}</button>}
           {hayFiltros && <button className="enlace" onClick={() => setFiltros({ texto: "", responsable: "", estado: "", prioridad: "" })}>Limpiar filtros</button>}
           <div className="empuje" />
           <span className="progreso" title={`${prog.listas} de ${prog.total} tareas listas`}>
@@ -136,6 +144,9 @@ export default function Proyecto({ proyecto, perfil, avisar, cambioLocal , carpe
       {dialogo === "miembros" && <Miembros proyecto={proyecto} {...props} esDueno={esDueno} onClose={() => setDialogo(null)} />}
       {dialogo === "etiquetas" && <Etiquetas {...props} onClose={() => setDialogo(null)} />}
       {dialogo === "color" && <EditarProyecto proyecto={proyecto} carpetas={carpetas} guardar={actualizarProyecto} onClose={() => setDialogo(null)} />}
+      {confirmarArchivo && <Confirmar mensaje={`¿Archivar ${listasParaArchivar.length === 1 ? "1 subtarea lista" : `${listasParaArchivar.length} subtareas listas`}?`} textoSi="Archivar"
+        detalle="Dejan de verse en la tabla, pero no se borran: las volvés a ver con «Ver archivadas»."
+        onNo={() => setConfirmarArchivo(false)} onSi={() => { setConfirmarArchivo(false); listasParaArchivar.forEach((t) => d.api.actualizarTarea(t.id, { archivada: true })); avisar(`${listasParaArchivar.length} archivada${listasParaArchivar.length === 1 ? "" : "s"}`); }} />}
       {dialogo === "eliminar" && <Confirmar mensaje={`¿Eliminar "${proyecto.name}"?`} detalle="Se borrarán todas sus subtareas, pasos, comentarios y adjuntos para todo el equipo. No se puede deshacer."
         onNo={() => setDialogo(null)} onSi={() => { setDialogo(null); eliminarProyecto(); }} />}
       {dialogo === "salir" && <Confirmar mensaje="¿Salir de esta tarea?" detalle="Vas a dejar de verlo hasta que te vuelvan a agregar." textoSi="Salir"

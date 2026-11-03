@@ -47,8 +47,9 @@ export default function MiDia({ perfil, proyectos, carpetas, avisar, ir }) {
 
   const grupos = useMemo(() => {
     const g = { atrasadas: [], hoy: [], manana: [], stoppers: [] };
+    const archivadas = new Set(subtareas.filter((s) => s.archivada).map((s) => s.id));
     for (const s of subtareas) {
-      if (!tareaDe[s.project_id]) continue;
+      if (!tareaDe[s.project_id] || s.archivada || (s.parent_id && archivadas.has(s.parent_id))) continue;
       if (persona && (persona === "nadie" ? s.assignee_id : s.assignee_id !== persona)) continue;
       const estado = etiquetaDe[s.status_id];
       if (estado?.is_done) continue;

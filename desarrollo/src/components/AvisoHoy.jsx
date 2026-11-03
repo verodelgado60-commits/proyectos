@@ -34,7 +34,8 @@ export function usePendientesHoy(perfil, proyectos) {
   return useMemo(() => {
     const ids = new Set(proyectos.map((p) => p.id));
     const listas = new Set(etiquetas.filter((l) => l.is_done).map((l) => l.id));
-    const vivas = subtareas.filter((s) => ids.has(s.project_id) && s.due_date && !s.fecha_na && !listas.has(s.status_id));
+    const archivadas = new Set(subtareas.filter((s) => s.archivada).map((s) => s.id));
+    const vivas = subtareas.filter((s) => ids.has(s.project_id) && !s.archivada && !(s.parent_id && archivadas.has(s.parent_id)) && s.due_date && !s.fecha_na && !listas.has(s.status_id));
     return {
       cargado,
       fecha: hoyLocal(ahora),

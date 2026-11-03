@@ -177,7 +177,7 @@ export function Confirmar({ mensaje, detalle, onSi, onNo, textoSi = "Eliminar" }
       {detalle && <div className="tenue detalle-confirmar">{detalle}</div>}
       <div className="acciones">
         <button className="boton" onClick={onNo}>Cancelar</button>
-        <button className={`boton ${textoSi === "Guardar" ? "primario" : "peligro"}`} onClick={onSi} autoFocus>{textoSi}</button>
+        <button className={`boton ${["Guardar", "Archivar"].includes(textoSi) ? "primario" : "peligro"}`} onClick={onSi} autoFocus>{textoSi}</button>
       </div>
     </Modal>
   );
