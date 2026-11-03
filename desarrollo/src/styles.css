@@ -514,3 +514,30 @@ button.chip-na:hover:not(:disabled) { border-color: var(--primario); color: var(
 .menu-fila { flex: none; }
 .menu-fila .tres-puntos { opacity: .45; font-size: 12px; }
 .fila:hover .menu-fila .tres-puntos, .menu-fila .tres-puntos:focus-visible { opacity: 1; }
+
+/* Mi día */
+.mi-dia { max-width: 1000px; }
+.filtros-dia { display: flex; align-items: center; gap: 8px; margin: 12px 0 18px; }
+.tareas-dia { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.chip-tarea-dia { border: 1px solid var(--borde); background: var(--superficie); border-radius: 999px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
+.chip-tarea-dia:hover { border-color: var(--primario); }
+.bloques-dia { display: grid; gap: 16px; }
+.bloque-dia { background: var(--superficie); border: 1px solid var(--borde); border-left: 5px solid var(--borde); border-radius: 10px; padding: 14px 16px; }
+.bloque-dia h2 { font-size: 16px; margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
+.bloque-dia.atrasadas { border-left-color: #e03c31; }
+.bloque-dia.hoy { border-left-color: #ff7c00; }
+.bloque-dia.manana { border-left-color: #ffbe00; }
+.bloque-dia.stoppers { border-left-color: #a63be3; }
+.contador-dia { font-size: 12px; font-weight: 700; background: var(--hover); color: var(--tenue); border-radius: 999px; padding: 1px 9px; }
+.lista-dia { list-style: none; margin: 0; padding: 0; display: grid; }
+.item-dia { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid var(--borde); }
+.item-dia:first-child { border-top: 0; }
+.abrir-dia { flex: 1; min-width: 0; display: grid; gap: 2px; text-align: left; border: 0; background: transparent; padding: 2px 4px; border-radius: 6px; cursor: pointer; color: var(--texto); }
+.abrir-dia:hover .titulo-dia { color: var(--primario); }
+.titulo-dia { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.motivo-dia { font-size: 12px; color: #c42e24; overflow-wrap: anywhere; }
+.lado-dia { display: flex; align-items: center; gap: 8px; flex: none; }
+.pastilla-dia { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.boton-listo { padding: 4px 9px; color: #098e68; border-color: #1dcd9f; font-weight: 700; }
+.boton-listo:hover { background: #1dcd9f; color: #30343c; }
+@media (max-width: 640px) { .item-dia { flex-wrap: wrap; } .lado-dia { margin-left: 4px; } }

@@ -18,11 +18,13 @@ const VISTAS = [
   { id: "resumen", nombre: "Resumen" },
 ];
 
-export default function Proyecto({ proyecto, perfil, avisar, cambioLocal , carpetas = [], carpeta = null }) {
+export default function Proyecto({ proyecto, perfil, avisar, cambioLocal , carpetas = [], carpeta = null, abrirSubtarea = null }) {
   const d = useProyecto(proyecto.id, avisar);
   const [vista, setVista] = useState(() => { try { return localStorage.getItem("vista") || "tabla"; } catch { return "tabla"; } });
   const [filtros, setFiltros] = useState({ texto: "", responsable: "", estado: "", prioridad: "" });
-  const [abierta, setAbierta] = useState(null);
+  const [abierta, setAbierta] = useState(abrirSubtarea);
+  // Enlace directo a una subtarea (desde "Mi día"): abrir su detalle
+  useEffect(() => { if (abrirSubtarea) setAbierta(abrirSubtarea); }, [abrirSubtarea]);
   const [dialogo, setDialogo] = useState(null);
 
   // La versión en Claude informa el rol directamente; la de Supabase lo toma del equipo

@@ -8,13 +8,15 @@ import Proyecto from "./Proyecto.jsx";
 import AdminUsuarios from "./AdminUsuarios.jsx";
 import CambiarClave from "./CambiarClave.jsx";
 import ActualizarToken from "./ActualizarToken.jsx";
+import MiDia from "./MiDia.jsx";
 import { EstadoGuardado } from "./Sistema.jsx";
 import Notificaciones from "./Notificaciones.jsx";
 
 function leerRuta() {
   const h = window.location.hash.replace(/^#\/?/, "");
-  const [tipo, id] = h.split("/");
-  if (tipo === "p" && id) return { tipo: "proyecto", id };
+  const [tipo, id, sub] = h.split("/");
+  if (tipo === "p" && id) return { tipo: "proyecto", id, sub: sub || null };
+  if (tipo === "hoy") return { tipo: "hoy" };
   if (tipo === "c" && id) return { tipo: "carpeta", id };
   if (tipo === "usuarios") return { tipo: "usuarios" };
   return { tipo: "inicio" };
@@ -68,6 +70,7 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
         {escribe && <button className="boton primario ancho" onClick={() => setNuevaCarpeta(true)}>+ Nuevo proyecto</button>}
         <nav>
           <button className={`nav-item ${ruta.tipo === "inicio" ? "activo" : ""}`} onClick={() => ir("")}>🏠 Inicio</button>
+          <button className={`nav-item ${ruta.tipo === "hoy" ? "activo" : ""}`} onClick={() => ir("/hoy")}>☀️ Mi día</button>
           {perfil.is_admin && <button className={`nav-item ${ruta.tipo === "usuarios" ? "activo" : ""}`} onClick={() => ir("/usuarios")}>👥 Usuarios y permisos</button>}
           <h3 className="nav-titulo">Mis proyectos</h3>
           {cargando && <p className="tenue pequeno">Cargando…</p>}
@@ -115,7 +118,8 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
         <Notificaciones className="campana-movil campana-fija" perfil={perfil} proyectos={proyectos} carpetas={mapaCarpetas} alAbrir={(id) => ir(`/p/${id}`)} />
         {ruta.tipo === "usuarios" && perfil.is_admin && <AdminUsuarios perfil={perfil} avisar={avisar} />}
         {ruta.tipo === "proyecto" && actual && <Proyecto key={actual.id} proyecto={actual} perfil={perfil} avisar={avisar} cambioLocal={cambioLocal}
-          carpetas={carpetas} carpeta={mapaCarpetas[actual.carpeta_id] ?? null} escribe={escribe} />}
+          carpetas={carpetas} carpeta={mapaCarpetas[actual.carpeta_id] ?? null} escribe={escribe} abrirSubtarea={ruta.sub} />}
+        {ruta.tipo === "hoy" && <MiDia perfil={perfil} proyectos={proyectos} carpetas={todasCarpetas} avisar={avisar} ir={ir} />}
         {ruta.tipo === "carpeta" && (ruta.id === SIN || mapaCarpetas[ruta.id]) && (
           <VistaCarpeta key={ruta.id} carpeta={ruta.id === SIN ? { id: SIN, name: "Sin proyecto", color: "#b0b0b4" } : mapaCarpetas[ruta.id]}
             carpetas={carpetas} tareas={tareasDe(ruta.id)} perfil={perfil} escribe={escribe} cargando={cargando} avisar={avisar} ir={ir}
