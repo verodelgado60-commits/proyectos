@@ -10,7 +10,7 @@ import CambiarClave from "./CambiarClave.jsx";
 import ActualizarToken from "./ActualizarToken.jsx";
 import MiDia from "./MiDia.jsx";
 import Buscador from "./Buscador.jsx";
-import { MenuDashes, NuevoGrupoDash, useDashes, VistaDash, VistaGrupoDash } from "./Dashes.jsx";
+import { ListaGruposDash, MenuDashes, NuevoGrupoDash, useDashes, VistaDash, VistaGrupoDash } from "./Dashes.jsx";
 import AvisoHoy from "./AvisoHoy.jsx";
 import { EstadoGuardado } from "./Sistema.jsx";
 import Notificaciones from "./Notificaciones.jsx";
@@ -20,6 +20,8 @@ function leerRuta() {
   const [tipo, id, sub] = h.split("/");
   if (tipo === "p" && id) return { tipo: "proyecto", id, sub: sub || null };
   if (tipo === "hoy") return { tipo: "hoy" };
+  if (tipo === "proyectos") return { tipo: "proyectos" };
+  if (tipo === "dash" && !id) return { tipo: "dashes" };
   if (tipo === "dg" && id) return { tipo: "dash-grupo", id };
   if (tipo === "d" && id) return { tipo: "dash", id };
   if (tipo === "buscar") { let q = ""; try { q = decodeURIComponent(h.slice(7)); } catch { /* texto inválido */ } return { tipo: "buscar", q }; }
@@ -162,6 +164,8 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
           const dash = datosDash.dashes.find((d) => d.id === ruta.id);
           return <VistaDash key={dash.id} dash={dash} grupo={datosDash.grupos.find((g) => g.id === dash.grupo_id)} datos={datosDash} ir={ir} />;
         })()}
+        {ruta.tipo === "proyectos" && <ListaProyectos carpetas={carpetas} sueltas={sueltas} tareasDe={tareasDe} cargando={cargando} escribe={escribe} onNuevo={() => setNuevaCarpeta(true)} ir={ir} />}
+        {ruta.tipo === "dashes" && <ListaGruposDash datos={datosDash} ir={ir} onNuevo={() => setNuevoGrupoDash(true)} />}
         {ruta.tipo === "hoy" && <MiDia perfil={perfil} proyectos={activos} carpetas={todasCarpetas} avisar={avisar} ir={ir} />}
         {ruta.tipo === "carpeta" && (ruta.id === SIN || mapaCarpetas[ruta.id]) && (
           <VistaCarpeta key={ruta.id} carpeta={ruta.id === SIN ? { id: SIN, name: "Sin proyecto", color: "#b0b0b4" } : mapaCarpetas[ruta.id]}
@@ -169,7 +173,7 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
             onNueva={() => crearTareaEn(ruta.id)} onBorrada={(id) => { setCarpetas((l) => l.filter((c) => c.id !== id)); setProyectos((l) => l.map((p) => (p.carpeta_id === id ? { ...p, carpeta_id: null } : p))); ir(""); }} />
         )}
         {(ruta.tipo === "inicio" || (ruta.tipo === "usuarios" && !perfil.is_admin)) && (
-          <Inicio perfil={perfil} carpetas={carpetas} sueltas={sueltas} tareasDe={tareasDe} cargando={cargando} escribe={escribe} onNuevo={() => setNuevaCarpeta(true)} ir={ir} />
+          <Inicio perfil={perfil} cantProyectos={carpetas.length} cantDash={datosDash.dashes.length} ir={ir} />
         )}
       </main>
 
@@ -203,15 +207,36 @@ function SelectorSegmento({ valor, onCambiar, id }) {
   );
 }
 
-function Inicio({ perfil, carpetas, sueltas, tareasDe, cargando, escribe, onNuevo, ir }) {
+// Inicio: "¿qué deseás ver?" con dos opciones
+function Inicio({ perfil, cantProyectos, cantDash, ir }) {
   // Saludo: el nombre que la persona eligió en Mi cuenta; si no, su primer nombre
   const nombre = perfil.nickname || (perfil.full_name || perfil.username).split(" ")[0];
+  return (
+    <section className="inicio">
+      <h1>{nombre}, ¿qué deseás ver?</h1>
+      <div className="opciones-inicio">
+        <button className="opcion-inicio opcion-proyectos" onClick={() => ir("/proyectos")}>
+          <span className="icono-opcion" aria-hidden="true">📁</span>
+          <strong>Proyectos</strong>
+          <span className="tenue">{cantProyectos === 1 ? "1 proyecto" : `${cantProyectos} proyectos`} con sus tareas y subtareas</span>
+        </button>
+        <button className="opcion-inicio opcion-dash" onClick={() => ir("/dash")}>
+          <span className="icono-opcion" aria-hidden="true">📊</span>
+          <strong>Dash</strong>
+          <span className="tenue">{cantDash === 1 ? "1 dash" : `${cantDash} dash`} con tus datos y gráficos</span>
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function ListaProyectos({ carpetas, sueltas, tareasDe, cargando, escribe, onNuevo, ir }) {
   // Los más recientes primero
   const recientes = [...carpetas].sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")));
   const lista = [...recientes, ...(sueltas.length ? [{ id: SIN, name: "Sin proyecto", color: "#b0b0b4" }] : [])];
   return (
     <section className="inicio">
-      <h1>Hola {nombre}</h1>
+      <h1>Proyectos</h1>
       <p className="tenue">Acá están tus últimos proyectos</p>
       <div className="tarjetas">
         {lista.map((c) => {

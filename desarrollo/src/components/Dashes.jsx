@@ -141,6 +141,28 @@ export function NuevoGrupoDash({ datos, onClose, ir }) {
   );
 }
 
+// Pantalla "Dash": todos los grupos
+export function ListaGruposDash({ datos, ir, onNuevo }) {
+  const { grupos, dashes, escribe } = datos;
+  return (
+    <section className="inicio">
+      <h1>Dash</h1>
+      <p className="tenue">Acá están tus dash</p>
+      <div className="tarjetas">
+        {grupos.map((g) => {
+          const n = dashes.filter((d) => d.grupo_id === g.id).length;
+          return (
+            <button key={g.id} className="tarjeta-proyecto" onClick={() => ir(`/dg/${g.id}`)} style={{ borderTopColor: g.color }}>
+              <strong>{g.name}</strong><span className="tenue">{n === 0 ? "Sin dash" : n === 1 ? "1 dash" : `${n} dash`}</span>
+            </button>
+          );
+        })}
+        {escribe && <button className="tarjeta-proyecto nueva" onClick={onNuevo}><strong>+ Crear grupo de dash</strong><span className="tenue">Por ejemplo NPS o Contención; adentro creás sus dash</span></button>}
+      </div>
+    </section>
+  );
+}
+
 // Pantalla de un grupo: sus dash en tarjetas
 export function VistaGrupoDash({ grupo, datos, ir }) {
   const { dashes, escribe, api } = datos;

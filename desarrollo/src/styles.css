@@ -588,3 +588,13 @@ button.chip-na:hover:not(:disabled) { border-color: var(--primario); color: var(
 .dash-vacio { margin-top: 18px; background: var(--superficie); border: 1px dashed var(--borde); border-radius: 12px; padding: 28px; max-width: 720px; }
 .tarjeta-proyecto.nueva input { width: 100%; }
 .tarjeta-proyecto.nueva .acciones { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* Inicio: ¿qué deseás ver? */
+.opciones-inicio { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-top: 22px; max-width: 760px; }
+.opcion-inicio { display: grid; gap: 8px; justify-items: start; text-align: left; padding: 28px; border-radius: 16px; border: 1px solid var(--borde); background: var(--superficie); cursor: pointer; transition: box-shadow .15s, transform .15s, border-color .15s; }
+.opcion-inicio:hover { box-shadow: var(--sombra); transform: translateY(-2px); }
+.opcion-inicio strong { font-size: 22px; }
+.icono-opcion { font-size: 34px; width: 64px; height: 64px; border-radius: 16px; display: grid; place-items: center; }
+.opcion-proyectos { border-top: 6px solid #0780ee; } .opcion-proyectos .icono-opcion { background: color-mix(in srgb, #0780ee 14%, var(--superficie)); }
+.opcion-dash { border-top: 6px solid #ff7c00; } .opcion-dash .icono-opcion { background: color-mix(in srgb, #ff7c00 14%, var(--superficie)); }
+.opcion-proyectos:hover { border-color: #0780ee; } .opcion-dash:hover { border-color: #ff7c00; }
