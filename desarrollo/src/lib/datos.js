@@ -51,6 +51,7 @@ export function useCarpetas(usuarioId, avisar) {
 const TANDAS = [
   ["responsables-iniciales", [["Tif", "#a63be3"], ["Fer", "#ff7c00"], ["David", "#1dcd9f"]]],
   ["responsables-isoft", [["Isoft", "#003ff9"]]],
+  ["responsables-documentacion", [["Documentación", "#893124"]]],
 ];
 export function useResponsables(puedeEscribir, avisar) {
   const [responsables, setResponsables] = useState([]);

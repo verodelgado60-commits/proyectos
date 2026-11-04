@@ -101,7 +101,7 @@ with sync_playwright() as pw:
     # Responsables: Tif, Fer y David además de la cuenta
     v.locator("tr.fila").nth(0).locator("button[aria-label='Cambiar responsable']").click()
     nombres = v.locator(".lista-personas .opcion-persona span").all_inner_texts()
-    check("responsables: Verónica, Tif, Fer, David e Isoft", all(n in nombres for n in ["Verónica Delgado", "Tif", "Fer", "David", "Isoft"]))
+    check("responsables: Verónica, Tif, Fer, David, Isoft y Documentación", all(n in nombres for n in ["Verónica Delgado", "Tif", "Fer", "David", "Isoft", "Documentación"]))
     v.click(".lista-personas .opcion-persona:has-text('Fer')")
     v.locator("tr.fila").nth(1).locator("button[aria-label='Cambiar responsable']").click()
     v.fill(".agregar-persona input", "Sofi"); v.keyboard.press("Enter")
