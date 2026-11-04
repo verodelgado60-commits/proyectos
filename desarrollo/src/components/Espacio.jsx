@@ -252,7 +252,7 @@ function VistaCarpeta({ carpeta, carpetas, tareas, archivadas = [], perfil, escr
   const cuantas = (id) => tareas.filter((t) => entraEnSegmento(t, id)).length;
   const archivar = async (t, valor) => {
     const { error } = await supabase.from("projects").update({ archivada: valor }).eq("id", t.id);
-    if (error) avisar(traducirError(error), "error"); else avisar(valor ? `«${t.name}» archivada` : `«${t.name}» volvió a la lista`);
+    if (error) avisar(traducirError(error), "error"); else avisar(valor ? `«${t.name}» pasó a Tareas listas` : `«${t.name}» volvió a las tareas abiertas`);
   };
   const eliminarTarea = async (t) => {
     const { error } = await supabase.from("projects").delete().eq("id", t.id);
@@ -316,7 +316,7 @@ function VistaCarpeta({ carpeta, carpetas, tareas, archivadas = [], perfil, escr
               )}>
                 {(cerrar) => (<>
                   <button className="opcion-menu" onClick={() => { cerrar(); setEditando(p); }}>✏️ Editar</button>
-                  <button className="opcion-menu" onClick={() => { cerrar(); archivar(p, true); }}>🗄 Archivar</button>
+                  <button className="opcion-menu" onClick={() => { cerrar(); archivar(p, true); }}>✅ Pasar a Tareas listas</button>
                   <button className="opcion-menu peligro" onClick={() => { cerrar(); setBorrando(p); }}>🗑 Eliminar</button>
                 </>)}
               </Desplegable>
@@ -330,14 +330,14 @@ function VistaCarpeta({ carpeta, carpetas, tareas, archivadas = [], perfil, escr
       {archivadas.length > 0 && (
         <div className="archivadas-carpeta">
           <button className="enlace" onClick={() => setVerArchivadas((x) => !x)} aria-expanded={verArchivadas}>
-            {verArchivadas ? "▾" : "▸"} 🗄 Archivadas ({archivadas.length})
+            {verArchivadas ? "▾" : "▸"} ✅ Tareas listas ({archivadas.length})
           </button>
           {verArchivadas && (
             <ul className="lista-archivadas">
               {archivadas.map((t) => (
                 <li key={t.id}>
                   <button className="enlace-archivada" onClick={() => ir(`/p/${t.id}`)}>{t.name}</button>
-                  {escribe && <button className="boton" onClick={() => archivar(t, false)}>Desarchivar</button>}
+                  {escribe && <button className="boton" onClick={() => archivar(t, false)}>Volver a abrir</button>}
                 </li>
               ))}
             </ul>

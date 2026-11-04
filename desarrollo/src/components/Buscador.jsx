@@ -56,7 +56,7 @@ export default function Buscador({ texto, proyectos, carpetas, avisar, ir }) {
           <button key={c.id} className="resultado" onClick={() => ir(`/c/${c.id}`)}><i className="punto" style={{ background: c.color }} /> <strong><Resaltar t={c.name} /></strong></button>))}</Grupo>}
         {res.tareas.length > 0 && <Grupo titulo="Tareas">{res.tareas.map((p) => (
           <button key={p.id} className="resultado" onClick={() => ir(`/p/${p.id}`)}>
-            <strong><Resaltar t={p.name} /></strong>{p.archivada && <span className="insignia-archivada">Archivada</span>}
+            <strong><Resaltar t={p.name} /></strong>{p.archivada && <span className="insignia-archivada">Tarea lista</span>}
             <span className="tenue pequeno">{p.carpeta ? p.carpeta.name : "Sin proyecto"}{p.description ? " · " : ""}<Resaltar t={recorte(p.description)} /></span>
           </button>))}</Grupo>}
         {res.subtareas.length > 0 && <Grupo titulo="Subtareas">{res.subtareas.map((s) => (
