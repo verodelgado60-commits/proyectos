@@ -12,6 +12,8 @@ import MiDia from "./MiDia.jsx";
 import Buscador from "./Buscador.jsx";
 import { ListaGruposDash, NuevoGrupoDash, useDashes, VistaDash, VistaGrupoDash } from "./Dashes.jsx";
 import AvisoHoy from "./AvisoHoy.jsx";
+import Celebracion from "./Celebracion.jsx";
+import { celebrar } from "../lib/celebrar.js";
 import { EstadoGuardado } from "./Sistema.jsx";
 import Notificaciones from "./Notificaciones.jsx";
 
@@ -159,6 +161,7 @@ export default function Espacio({ perfil, setPerfil, avisar }) {
         )}
       </main>
 
+      <Celebracion nombre={perfil.nickname || (perfil.full_name || perfil.username || "").split(" ")[0]} />
       {!cargando && <AvisoHoy perfil={perfil} proyectos={activos} ir={ir} />}
       {nuevoGrupoDash && <NuevoGrupoDash datos={datosDash} ir={ir} onClose={() => setNuevoGrupoDash(false)} />}
       {nuevaCarpeta && <NuevaCarpeta carpetas={todasCarpetas} avisar={avisar} onClose={() => setNuevaCarpeta(false)}
@@ -252,7 +255,7 @@ function VistaCarpeta({ carpeta, carpetas, tareas, archivadas = [], perfil, escr
   const cuantas = (id) => tareas.filter((t) => entraEnSegmento(t, id)).length;
   const archivar = async (t, valor) => {
     const { error } = await supabase.from("projects").update({ archivada: valor }).eq("id", t.id);
-    if (error) avisar(traducirError(error), "error"); else avisar(valor ? `«${t.name}» pasó a Tareas listas` : `«${t.name}» volvió a las tareas abiertas`);
+    if (error) avisar(traducirError(error), "error"); else if (valor) celebrar(t.name); else avisar(`«${t.name}» volvió a las tareas abiertas`);
   };
   const eliminarTarea = async (t) => {
     const { error } = await supabase.from("projects").delete().eq("id", t.id);

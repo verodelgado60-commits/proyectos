@@ -5,6 +5,7 @@ import { useResponsables } from "../lib/datos.js";
 import { Avatar, textoSobre } from "./ui.jsx";
 import { esStopper } from "./Stopper.jsx";
 import { ActivarAvisosNavegador } from "./AvisoHoy.jsx";
+import { celebrar } from "../lib/celebrar.js";
 
 // "Mi día": lo atrasado, lo que vence hoy y mañana, y los stoppers abiertos de todos los proyectos.
 export default function MiDia({ perfil, proyectos, carpetas, avisar, ir }) {
@@ -71,7 +72,7 @@ export default function MiDia({ perfil, proyectos, carpetas, avisar, ir }) {
     const listo = etiquetas.find((l) => l.project_id === s.project_id && l.kind === "status" && l.is_done);
     if (!listo) return;
     const { error } = await supabase.from("tasks").update({ status_id: listo.id, ...(s.stopper ? { stopper: null, stopper_desde: null } : {}) }).eq("id", s.id);
-    if (error) avisar(traducirError(error), "error"); else avisar(`«${s.title}» quedó lista`);
+    if (error) avisar(traducirError(error), "error"); else celebrar(s.title);
   };
 
   const nombre = perfil.nickname || (perfil.full_name || perfil.username).split(" ")[0];

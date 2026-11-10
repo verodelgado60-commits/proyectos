@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Modal } from "./ui.jsx";
+import { celebrar } from "../lib/celebrar.js";
 
 // Al pasar una subtarea a "Stopper" se pide cuál es el bloqueo; queda guardado en la subtarea.
 export const esStopper = (etiqueta) => !!etiqueta && /stopper|atasc/i.test(etiqueta.name);
@@ -11,6 +12,9 @@ export function useStopper(estados, actualizar) {
     if (!("status_id" in cambios) || cambios.status_id === tarea.status_id) return actualizar(tarea.id, cambios);
     const nuevo = estados.find((e) => e.id === cambios.status_id);
     if (esStopper(nuevo)) { setPendiente({ tarea, cambios }); return; }
+    // ¡Quedó lista! El dino celebra
+    const antes = estados.find((e) => e.id === tarea.status_id);
+    if (nuevo?.is_done && !antes?.is_done) celebrar(tarea.title);
     // Al salir del stopper se limpia el motivo
     return actualizar(tarea.id, tarea.stopper ? { ...cambios, stopper: null, stopper_desde: null } : cambios);
   };

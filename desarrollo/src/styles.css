@@ -613,3 +613,30 @@ button.chip-na:hover:not(:disabled) { border-color: var(--primario); color: var(
   .barra-volver + .proyecto .cabecera-proyecto { padding-left: 108px; }
 }
 @media (min-width: 861px) { .barra-volver:has(+ .proyecto) { background: var(--superficie); padding-bottom: 2px; } }
+
+/* Celebración del dino */
+.celebracion { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; pointer-events: none; background: color-mix(in srgb, var(--fondo) 35%, transparent); animation: fiesta-entra .25s ease-out, fiesta-sale .5s ease-in 3.1s forwards; }
+.tarjeta-fiesta { position: relative; z-index: 1; display: grid; justify-items: center; gap: 0; background: var(--superficie); border: 1px solid var(--borde); border-radius: 22px; padding: 18px 34px 20px; box-shadow: 0 18px 50px rgba(0, 0, 0, .18); animation: fiesta-pop .45s cubic-bezier(.2, 1.6, .4, 1); text-align: center; max-width: calc(100vw - 32px); }
+.frase-fiesta { font-size: 24px; font-weight: 800; color: var(--primario); margin: 4px 0 0; }
+.dino-fiesta { overflow: visible; }
+.cuerpo-dino { transform-origin: 50px 100px; animation: dino-salta .5s ease-in-out 0s 6 alternate; }
+.gorro { transform-origin: 80px 18px; animation: gorro-baila .5s ease-in-out 0s 6 alternate; }
+.soplete { transform-origin: 90px 36px; animation: dino-salta .5s ease-in-out 0s 6 alternate; }
+.lengua { transform-origin: 96px 36px; animation: soplar .5s ease-in-out .15s 6 alternate both; }
+.nota { opacity: 0; animation: nota-sube 1s ease-out infinite; }
+.n2 { animation-delay: .3s; } .n3 { animation-delay: .6s; }
+.confeti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.confeti i { position: absolute; top: -20px; border-radius: 2px; animation-name: confeti-cae; animation-timing-function: cubic-bezier(.3, .6, .6, 1); animation-fill-mode: forwards; }
+.confeti i.redondo { border-radius: 50%; }
+@keyframes fiesta-entra { from { opacity: 0; } }
+@keyframes fiesta-sale { to { opacity: 0; } }
+@keyframes fiesta-pop { from { transform: scale(.4) translateY(30px); opacity: 0; } }
+@keyframes dino-salta { from { transform: translateY(0); } to { transform: translateY(-7px) rotate(-2deg); } }
+@keyframes gorro-baila { from { transform: translateY(0) rotate(-6deg); } to { transform: translateY(-9px) rotate(8deg); } }
+@keyframes soplar { from { transform: scaleX(.12); } to { transform: scaleX(1); } }
+@keyframes nota-sube { 0% { opacity: 0; transform: translateY(6px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(-14px); } }
+@keyframes confeti-cae { 0% { transform: translateY(0) rotate(0); opacity: 1; } 85% { opacity: 1; } 100% { transform: translateY(105vh) rotate(var(--giro)); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .cuerpo-dino, .gorro, .soplete, .lengua, .nota, .confeti i, .tarjeta-fiesta { animation: none; }
+  .confeti { display: none; } .nota { opacity: 1; }
+}
