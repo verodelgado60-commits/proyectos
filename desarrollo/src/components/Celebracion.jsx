@@ -31,8 +31,8 @@ export default function Celebracion({ nombre }) {
       </div>
       <div className="tarjeta-fiesta">
         <DinoFiesta />
-        <p className="frase-fiesta">{fiesta.frase}{nombre ? `, ${nombre}` : ""}! 🎉</p>
-        {fiesta.titulo && <p className="tenue pequeno">«{fiesta.titulo}» quedó lista</p>}
+        {/* Sin texto en pantalla: solo para lectores de pantalla */}
+        <span className="solo-lector">{fiesta.frase}{nombre ? `, ${nombre}` : ""}! {fiesta.titulo ? `«${fiesta.titulo}» quedó lista` : ""}</span>
       </div>
     </div>
   );
@@ -40,7 +40,7 @@ export default function Celebracion({ nombre }) {
 
 function DinoFiesta() {
   return (
-    <svg className="dino-fiesta" viewBox="-4 -6 154 112" width="230" height="168" aria-hidden="true">
+    <svg className="dino-fiesta" viewBox="-4 -6 154 112" width="300" height="218" aria-hidden="true">
       {/* gorrito de fiesta */}
       <g className="gorro">
         <path d="M74 14l14-14 7 20z" fill="#a63be3" />

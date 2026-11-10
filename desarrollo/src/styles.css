@@ -615,8 +615,8 @@ button.chip-na:hover:not(:disabled) { border-color: var(--primario); color: var(
 @media (min-width: 861px) { .barra-volver:has(+ .proyecto) { background: var(--superficie); padding-bottom: 2px; } }
 
 /* Celebración del dino */
-.celebracion { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; pointer-events: none; background: color-mix(in srgb, var(--fondo) 35%, transparent); animation: fiesta-entra .25s ease-out, fiesta-sale .5s ease-in 3.1s forwards; }
-.tarjeta-fiesta { position: relative; z-index: 1; display: grid; justify-items: center; gap: 0; background: var(--superficie); border: 1px solid var(--borde); border-radius: 22px; padding: 18px 34px 20px; box-shadow: 0 18px 50px rgba(0, 0, 0, .18); animation: fiesta-pop .45s cubic-bezier(.2, 1.6, .4, 1); text-align: center; max-width: calc(100vw - 32px); }
+.celebracion { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; pointer-events: none; animation: fiesta-entra .25s ease-out, fiesta-sale .5s ease-in 3.1s forwards; }
+.tarjeta-fiesta { position: relative; z-index: 1; display: grid; justify-items: center; filter: drop-shadow(0 10px 18px rgba(0, 0, 0, .18)); animation: fiesta-pop .45s cubic-bezier(.2, 1.6, .4, 1); text-align: center; max-width: calc(100vw - 32px); }
 .frase-fiesta { font-size: 24px; font-weight: 800; color: var(--primario); margin: 4px 0 0; }
 .dino-fiesta { overflow: visible; }
 .cuerpo-dino { transform-origin: 50px 100px; animation: dino-salta .5s ease-in-out 0s 6 alternate; }
@@ -640,3 +640,4 @@ button.chip-na:hover:not(:disabled) { border-color: var(--primario); color: var(
   .cuerpo-dino, .gorro, .soplete, .lengua, .nota, .confeti i, .tarjeta-fiesta { animation: none; }
   .confeti { display: none; } .nota { opacity: 1; }
 }
+.solo-lector { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
